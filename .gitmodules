@@ -1,0 +1,3 @@
+[submodule "3rdparty/hidtool"]
+	path = 3rdparty/hidtool
+	url = https://github.com/jaderochan/hidtool
