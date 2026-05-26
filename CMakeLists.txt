@@ -27,7 +27,7 @@ endif()
 ###########
 
 option(HIDTOOL_C_BUILD_SHARED   "Build hidtool_c as a shared library" OFF)
-option(HIDTOOL_C_BUILD_EXAMPLES "Build hidtool_c example programs"    OFF)
+option(HIDTOOL_C_BUILD_EXAMPLES "Build hidtool_c example programs"    ON)
 
 ###############################
 # Build hidtool C++ submodule #
