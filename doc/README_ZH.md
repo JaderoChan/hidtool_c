@@ -1,9 +1,14 @@
-# HID Tool C — 中文文档
+# hidtool_c — hidtool 的 C 语言绑定
 
 [**简体中文** | [**English**](README_EN.md)]
 
-[hidtool](https://github.com/JaderoChan/hidtool) C++ 库的 C 语言绑定。
-提供纯 C API，用于跨平台键盘 / 鼠标输入模拟与全局事件监听。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/JaderoChan/hidtool_c)
+[![Language: C](https://img.shields.io/badge/language-C99-lightgrey.svg)](https://en.wikipedia.org/wiki/C99)
+[![Upstream](https://img.shields.io/badge/upstream-hidtool-orange.svg)](https://github.com/JaderoChan/hidtool)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-informational.svg)](https://github.com/JaderoChan/hidtool_c)
+
+[hidtool](https://github.com/JaderoChan/hidtool) C++ 库的纯 C 绑定，提供完整的 C99 API，用于全局键盘 / 鼠标事件监听与输入模拟。
 
 ---
 
@@ -11,52 +16,58 @@
 
 - [特性](#特性)
 - [平台支持](#平台支持)
-- [要求](#要求)
+- [环境要求](#环境要求)
 - [构建](#构建)
 - [集成](#集成)
-- [API 参考](#api-参考)
-  - [类型](#类型)
-  - [HID 类型工具函数](#hid-类型工具函数)
-  - [键盘按键工具函数](#键盘按键工具函数)
-  - [键盘 Hooker（监听器）](#键盘-hooker监听器)
-  - [键盘 Simulator（模拟器）](#键盘-simulator模拟器)
-  - [鼠标 Hooker（监听器）](#鼠标-hooker监听器)
-  - [鼠标 Simulator（模拟器）](#鼠标-simulator模拟器)
-  - [HID Hooker（统一监听器）](#hid-hooker统一监听器)
-  - [HID Simulator（统一模拟器）](#hid-simulator统一模拟器)
+- [API 概览](#api-概览)
+  - [类型与枚举](#类型与枚举)
+  - [通用 HID 工具函数](#通用-hid-工具函数)
+  - [键盘 — 按键工具函数](#键盘--按键工具函数)
+  - [键盘 — 钩子（监听）](#键盘--钩子监听)
+  - [键盘 — 模拟器](#键盘--模拟器)
+  - [鼠标 — 钩子（监听）](#鼠标--钩子监听)
+  - [鼠标 — 模拟器](#鼠标--模拟器)
+  - [统一 HID 钩子](#统一-hid-钩子)
 - [使用示例](#使用示例)
+  - [键盘监听](#键盘监听)
+  - [键盘模拟](#键盘模拟)
+  - [鼠标监听](#鼠标监听)
+  - [鼠标模拟](#鼠标模拟)
+- [注意事项](#注意事项)
 
 ---
 
 ## 特性
 
-- **键盘模块**：全局键盘事件监听、键盘输入模拟
-- **鼠标模块**：全局鼠标事件监听、鼠标输入模拟（移动、点击、滚轮、拖拽）
-- 纯 C 头文件（`hidtool_c.h`）——项目中无需任何 C++ 代码
-- 跨平台：Windows、macOS、Linux
-- 支持静态库 / 动态库构建
-- 通过原子操作实现线程安全的回调注册
+- **纯 C99 API** — 只需包含单个头文件并链接库，您的项目无需 C++ 编译器。
+- **键盘模块** — 全局键盘事件监听与键盘输入模拟。
+- **鼠标模块** — 全局鼠标事件监听，支持绝对 / 相对移动、点击、滚轮、拖拽。
+- **统一 HID 钩子** — 通过单个回调同时接收键盘和鼠标事件。
+- 跨平台：Windows、macOS、Linux。
+- 支持静态库 / 动态库构建。
+- 线程安全的单例钩子与模拟器。
 
 ---
 
 ## 平台支持
 
-| 平台    | 状态 | 备注 |
-|---------|------|------|
-| Windows | ✅   | —    |
-| macOS   | ✅   | 需要辅助功能权限 |
-| Linux   | ✅   | 需要管理员权限  |
+| 平台 | 状态 | 备注 |
+|------|------|------|
+| Windows  | ✅ | — |
+| macOS    | ✅ | 事件监听与模拟功能需要**辅助功能**权限 |
+| Linux    | ✅ | 需要**管理员 / root** 权限（访问 `/dev/input` 和 `/dev/uinput`） |
 
-> **macOS 注意**：由于 macOS API 设计限制，模拟函数无法确认执行是否成功。
-> 即使函数返回非零值，操作也可能没有效果，通常需要为应用授予**辅助功能**相关权限。
+> **macOS**：由于 macOS API 设计，模拟函数无法确认操作是否生效。请为宿主程序授予**辅助功能**权限。
+>
+> **Linux**：`hidt_mouse_hooker_get_cursor_pos()` 在 Linux 上始终返回 `{0, 0}`，因为原始输入 API 不提供绝对光标位置。
 
 ---
 
-## 要求
+## 环境要求
 
-- CMake >= 3.26
-- C11 编译器（事件结构体使用了匿名 union）
-- C++11 编译器（用于构建绑定层）
+- CMake ≥ 3.26
+- 您的项目需要 **C99** 编译器
+- 构建 hidtool\_c 本身需要 **C++11** 编译器（绑定层以 C++ 编译）
 - **macOS**：CoreFoundation、Carbon、CoreGraphics（CMake 自动查找）
 - **Linux**：pthreads
 
@@ -65,693 +76,544 @@
 ## 构建
 
 ```bash
-git clone --recurse-submodules <本仓库地址>
+git clone --recurse-submodules https://github.com/JaderoChan/hidtool_c.git
 cd hidtool_c
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake -B build [选项]
 cmake --build build
 ```
+
+> 若已克隆但未拉取子模块，请执行 `git submodule update --init --recursive`。
 
 ### CMake 选项
 
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
-| `HIDTOOL_BUILD_WITH_KEYBOARD`  | `ON`  | 构建键盘模块 |
-| `HIDTOOL_BUILD_WITH_MOUSE`     | `ON`  | 构建鼠标模块 |
-| `HIDTOOL_C_BUILD_SHARED`       | `OFF` | 将 `hidtool_c` 构建为动态库 |
-| `HIDTOOL_C_BUILD_EXAMPLES`     | `OFF` | 构建 `example/` 下的示例程序 |
+| `HIDTOOL_C_BUILD_SHARED`      | `OFF` | 构建为动态库 |
+| `HIDTOOL_C_BUILD_EXAMPLES`    | `OFF` | 构建示例程序 |
+| `HIDTOOL_BUILD_WITH_KEYBOARD` | `ON`  | 包含键盘模块（透传自 hidtool） |
+| `HIDTOOL_BUILD_WITH_MOUSE`    | `ON`  | 包含鼠标模块（透传自 hidtool） |
 
 ```bash
-# 构建动态库
+# 默认静态库，Release 构建
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+# 动态库
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DHIDTOOL_C_BUILD_SHARED=ON
 
-# 构建并包含示例程序
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DHIDTOOL_C_BUILD_EXAMPLES=ON
-
-# 仅构建键盘模块
+# 仅键盘模块
 cmake -B build -DHIDTOOL_BUILD_WITH_MOUSE=OFF
+
+# 带示例
+cmake -B build -DHIDTOOL_C_BUILD_EXAMPLES=ON
 ```
 
 ---
 
 ## 集成
 
-### CMake — add_subdirectory
+### CMake — add\_subdirectory
 
 ```cmake
 add_subdirectory(hidtool_c)
-target_link_libraries(your_target PRIVATE hidtool_c)
+target_link_libraries(your_target PRIVATE hidtool_c::hidtool_c)
 ```
 
-在 C 源文件中引入头文件：
+### CMake — find\_package（安装后使用）
+
+```bash
+cmake --install build --prefix /your/install/path
+```
+
+```cmake
+find_package(hidtool_c REQUIRED)
+target_link_libraries(your_target PRIVATE hidtool_c::hidtool_c)
+```
+
+### 手动链接
+
+包含 `include/hidtool_c/hidtool_c.h` 并链接 `libhidtool_c.a`（或 `.lib` / `.so` / `.dll`）。
+
+---
+
+## API 概览
+
+包含单一公共头文件：
 
 ```c
 #include <hidtool_c/hidtool_c.h>
 ```
 
+预处理器宏 `HIDTOOL_C_HAS_KEYBOARD` 和 `HIDTOOL_C_HAS_MOUSE`（由生成的 `hidtool_c_config.h` 定义）分别用于条件编译键盘和鼠标 API 段。在编写可选代码路径时请检查这些宏。
+
 ---
 
-## API 参考
+### 类型与枚举
 
-### 类型
-
-#### 位置类型
+#### `HidtHidType`
 
 ```c
-typedef struct { int32_t x;  int32_t y;  } HidtcAbsolutePos;     /* 绝对坐标 */
-typedef struct { int32_t dx; int32_t dy; } HidtcRelativePos;      /* 相对位移 */
-typedef struct { int32_t min_x; int32_t max_x;
-                 int32_t min_y; int32_t max_y; } HidtcAbsolutePosRange; /* 坐标范围 */
+typedef enum HidtHidType {
+    HIDT_HIDTYPE_KEYBOARD = 0,
+    HIDT_HIDTYPE_MOUSE    = 1
+} HidtHidType;
 ```
 
-#### `HidtcMouseButton` — 鼠标按键
+#### `HidtMouseButton`
 
 ```c
-typedef enum {
-    HIDTC_MSBTN_NONE    = 0,  /* 无 */
-    HIDTC_MSBTN_LEFT    = 1,  /* 左键 */
-    HIDTC_MSBTN_RIGHT   = 2,  /* 右键 */
-    HIDTC_MSBTN_MIDDLE  = 3,  /* 中键 */
-    HIDTC_MSBTN_BACK    = 4,  /* 后退键 */
-    HIDTC_MSBTN_FORWARD = 5   /* 前进键 */
-} HidtcMouseButton;
+typedef enum HidtMouseButton {
+    HIDT_MSBTN_NONE    = 0,
+    HIDT_MSBTN_LEFT    = 1,
+    HIDT_MSBTN_RIGHT   = 2,
+    HIDT_MSBTN_MIDDLE  = 3,
+    HIDT_MSBTN_BACK    = 4,
+    HIDT_MSBTN_FORWARD = 5
+} HidtMouseButton;
 ```
 
-#### `HidtcKeyboardEvent` — 键盘事件
+#### 坐标类型
 
 ```c
-typedef struct {
-    HidtcKeyboardEventType type;   /* NONE / PRESS / RELEASE / SLEEP */
+typedef struct HidtAbsolutePos { int32_t x;  int32_t y;  } HidtAbsolutePos;
+typedef struct HidtRelativePos { int32_t dx; int32_t dy; } HidtRelativePos;
+typedef struct HidtAbsolutePosRange {
+    int32_t min_x; int32_t max_x;
+    int32_t min_y; int32_t max_y;
+} HidtAbsolutePosRange;
+```
+
+#### `HidtKeyboardKey`
+
+跨平台的键值枚举，将逻辑按键名映射为可移植值。数字键映射到对应 ASCII 码（`0x30`–`0x39`），字母键映射到对应 ASCII 码（`0x41`–`0x5A`），其余按键使用从 `0x8000` 开始的值。常用值：
+
+| 常量 | 值 |
+|------|----|
+| `HIDT_KBDKEY_NONE` | `0x0000` |
+| `HIDT_KBDKEY_A`–`HIDT_KBDKEY_Z` | `0x0041`–`0x005A` |
+| `HIDT_KBDKEY_0`–`HIDT_KBDKEY_9` | `0x0030`–`0x0039` |
+| `HIDT_KBDKEY_ENTER` | `0x8002` |
+| `HIDT_KBDKEY_ESCAPE` | `0x8039` |
+| `HIDT_KBDKEY_SPACE` | `0x8001` |
+| `HIDT_KBDKEY_SHIFT` / `_LEFT` / `_RIGHT` | `0x8060`–`0x8062` |
+| `HIDT_KBDKEY_CTRL` / `_LEFT` / `_RIGHT` | `0x805A`–`0x805C` |
+| `HIDT_KBDKEY_ALT` / `_LEFT` / `_RIGHT` | `0x805D`–`0x805F` |
+| `HIDT_KBDKEY_F1`–`HIDT_KBDKEY_F24` | `0x800F`–`0x8026` |
+
+常用别名：`HIDT_KBDKEY_RETURN`、`HIDT_KBDKEY_ESC`、`HIDT_KBDKEY_FN`、`HIDT_KBDKEY_OPTION`。
+
+#### `HidtKeyboardEventType`
+
+```c
+typedef enum HidtKeyboardEventType {
+    HIDT_KBD_ET_NONE    = 0,
+    HIDT_KBD_ET_PRESS   = 1,
+    HIDT_KBD_ET_RELEASE = 2,
+    HIDT_KBD_ET_SLEEP   = 3
+} HidtKeyboardEventType;
+```
+
+#### `HidtKeyboardEvent`
+
+```c
+typedef struct HidtKeyboardEvent {
+    HidtKeyboardEventType type;
     union {
-        int32_t nativeKey;         /* PRESS / RELEASE：平台原生按键值 */
-        size_t  sleepMs;           /* SLEEP：休眠毫秒数 */
-    };
-    uint64_t timestamp;            /* 事件时间戳，纳秒 */
-} HidtcKeyboardEvent;
+        int32_t  native_key; // ET_PRESS / ET_RELEASE：平台原生键值
+        uint64_t sleep_ms;   // ET_SLEEP：休眠时长（毫秒）
+    } u;
+    uint64_t timestamp;      // 事件时间戳（纳秒）
+} HidtKeyboardEvent;
 ```
 
-#### `HidtcMouseEvent` — 鼠标事件
+#### `HidtMouseEventType`
 
 ```c
-typedef struct {
-    HidtcMouseEventType type;
+typedef enum HidtMouseEventType {
+    HIDT_MS_ET_NONE     = 0,
+    HIDT_MS_ET_ABS_MOVE = 1,  // 光标绝对位置
+    HIDT_MS_ET_REL_MOVE = 2,  // 光标相对位移
+    HIDT_MS_ET_WHEEL    = 3,  // 滚轮
+    HIDT_MS_ET_DRAG     = 4,  // 拖拽
+    HIDT_MS_ET_PRESS    = 5,  // 按钮按下
+    HIDT_MS_ET_RELEASE  = 6,  // 按钮释放
+    HIDT_MS_ET_SLEEP    = 7   // 休眠（仅模拟）
+} HidtMouseEventType;
+```
+
+#### `HidtMouseEvent`
+
+```c
+typedef struct HidtMouseEvent {
+    HidtMouseEventType type;
     union {
-        HidtcAbsolutePos absPos;   /* ABS_MOVE：目标绝对坐标 */
-        HidtcRelativePos relPos;   /* REL_MOVE：相对位移 */
-        int32_t          wheelDelta; /* WHEEL：滚动量，单位 120，正值远离用户 */
+        HidtAbsolutePos abs_pos;      // ET_ABS_MOVE
+        HidtRelativePos rel_pos;      // ET_REL_MOVE
+        int32_t         wheel_delta;  // ET_WHEEL（单位：每格 120）
         struct {
-            HidtcAbsolutePos pos;
-            HidtcMouseButton button;
-        } drag;                    /* DRAG：拖拽目标坐标与按键 */
-        HidtcMouseButton button;   /* PRESS / RELEASE：鼠标按键 */
-        size_t           sleepMs;  /* SLEEP：休眠毫秒数 */
-    };
-    uint64_t timestamp;            /* 事件时间戳，纳秒 */
-} HidtcMouseEvent;
+            HidtAbsolutePos pos;
+            HidtMouseButton button;
+        } drag;                       // ET_DRAG
+        HidtMouseButton button;       // ET_PRESS / ET_RELEASE
+        uint64_t        sleep_ms;     // ET_SLEEP
+    } u;
+    uint64_t timestamp;               // 事件时间戳（纳秒）
+} HidtMouseEvent;
 ```
 
-#### `HidtcHidEvent` — 统一 HID 事件
+#### `HidtHidEvent`
+
+统一事件结构，包装键盘事件、鼠标事件或休眠标记。
 
 ```c
-typedef struct {
-    HidtcHidEventType type;        /* NONE / KEYBOARD / MOUSE / SLEEP */
+typedef enum HidtHidEventType {
+    HIDT_HID_ET_NONE     = 0,
+    HIDT_HID_ET_KEYBOARD = 1,
+    HIDT_HID_ET_MOUSE    = 2,
+    HIDT_HID_ET_SLEEP    = 3
+} HidtHidEventType;
+
+typedef struct HidtHidEvent {
+    HidtHidEventType type;
     union {
-        HidtcKeyboardEvent keyboardEvent;
-        HidtcMouseEvent    mouseEvent;
-        size_t             sleepMs;
-    };
-} HidtcHidEvent;
+        HidtKeyboardEvent keyboard_event; // HID_ET_KEYBOARD
+        HidtMouseEvent    mouse_event;    // HID_ET_MOUSE
+        uint64_t          sleep_ms;       // HID_ET_SLEEP
+    } u;
+} HidtHidEvent;
 ```
 
-#### 回调函数类型
+#### 回调类型
 
 ```c
-/* 返回非零值表示传播事件；返回零表示阻断事件传播 */
-typedef int (*HidtcKeyboardEventHandler)(const HidtcKeyboardEvent* event, void* userData);
-typedef int (*HidtcMouseEventHandler)   (const HidtcMouseEvent*    event, void* userData);
-typedef int (*HidtcHidEventHandler)     (const HidtcHidEvent*      event, void* userData);
-```
-
-> 并非所有平台都支持阻断事件传播，可通过
-> `hidtc_hid_hooker_is_support_block_event_propagation()` 提前检查。
-
----
-
-### HID 类型工具函数
-
-```c
-/* 检查当前环境是否支持指定的 HID 类型子模块，非零表示支持 */
-int hidtc_is_hid_type_supported(HidtcHidType hidType);
+// 返回非零值继续传播事件；返回零阻断事件（平台支持情况不一）。
+typedef int (*HidtKeyboardEventHandler)(const HidtKeyboardEvent* event, void* user_data);
+typedef int (*HidtMouseEventHandler)  (const HidtMouseEvent*    event, void* user_data);
+typedef int (*HidtHidEventHandler)    (const HidtHidEvent*      event, void* user_data);
 ```
 
 ---
 
-### 键盘按键工具函数
+### 通用 HID 工具函数
 
 ```c
-/* HidtcKeyboardKey -> 平台原生按键值，无映射时返回 -1 */
-int32_t hidtc_keyboard_key_to_native_key(HidtcKeyboardKey key);
-
-/* 平台原生按键值 -> HidtcKeyboardKey，无映射时返回 HIDTC_KBDKEY_NONE */
-HidtcKeyboardKey hidtc_keyboard_key_from_native_key(int32_t nativeKey);
-```
-
-常用按键常量（`HidtcKeyboardKey`）：
-
-| 常量 | 说明 |
-|------|------|
-| `HIDTC_KBDKEY_0` – `HIDTC_KBDKEY_9` | 数字行 |
-| `HIDTC_KBDKEY_A` – `HIDTC_KBDKEY_Z` | 字母键 |
-| `HIDTC_KBDKEY_F1` – `HIDTC_KBDKEY_F24` | 功能键 |
-| `HIDTC_KBDKEY_NUMPAD_0` – `HIDTC_KBDKEY_NUMPAD_9` | 小键盘数字 |
-| `HIDTC_KBDKEY_ENTER` / `HIDTC_KBDKEY_RETURN` | 回车 |
-| `HIDTC_KBDKEY_ESCAPE` / `HIDTC_KBDKEY_ESC` | Escape |
-| `HIDTC_KBDKEY_SPACE` | 空格 |
-| `HIDTC_KBDKEY_BACKSPACE` | 退格 |
-| `HIDTC_KBDKEY_TAB` | Tab |
-| `HIDTC_KBDKEY_LEFT/RIGHT/UP/DOWN` | 方向键 |
-| `HIDTC_KBDKEY_CTRL` / `_LEFT` / `_RIGHT` | Ctrl |
-| `HIDTC_KBDKEY_SHIFT` / `_LEFT` / `_RIGHT` | Shift |
-| `HIDTC_KBDKEY_ALT` / `_LEFT` / `_RIGHT` | Alt / Option |
-| `HIDTC_KBDKEY_META` / `_LEFT` / `_RIGHT` | Win / Command |
-| `HIDTC_KBDKEY_CAPS_LOCK` | Caps Lock |
-| `HIDTC_KBDKEY_DELETE` | Delete |
-| `HIDTC_KBDKEY_INSERT` | Insert |
-
----
-
-### 键盘 Hooker（监听器）
-
-```c
-/* 检查某个原生按键是否正被按下 */
-int  hidtc_keyboard_hooker_is_key_pressed(int32_t nativeKey);
-
-/* 启动 / 停止全局键盘监听 */
-int  hidtc_keyboard_hooker_run(void);
-void hidtc_keyboard_hooker_stop(void);
-int  hidtc_keyboard_hooker_is_running(void);
-
-/* 注册回调，传入 NULL 可注销回调 */
-int hidtc_keyboard_hooker_set_event_handler(HidtcKeyboardEventHandler handler,
-                                             void* userData);
-/* 仅更新用户数据指针，不更改回调 */
-int hidtc_keyboard_hooker_set_user_data(void* userData);
-```
-
-> **注意**：不能在事件回调函数内部调用 `hidtc_keyboard_hooker_*` 系列函数。
-
----
-
-### 键盘 Simulator（模拟器）
-
-```c
-int    hidtc_keyboard_simulator_initialize(void);
-void   hidtc_keyboard_simulator_destroy(void);
-int    hidtc_keyboard_simulator_is_initialized(void);
-
-/* 发送单个事件 */
-int    hidtc_keyboard_simulator_send_event(const HidtcKeyboardEvent* event);
-/* 批量发送事件，返回实际成功发送的数量 */
-size_t hidtc_keyboard_simulator_send_events(const HidtcKeyboardEvent* events, size_t count);
-
-/* 便捷函数 */
-int hidtc_keyboard_simulator_press_key_native(int32_t nativeKey);  /* 按下（原生键值）*/
-int hidtc_keyboard_simulator_press_key(HidtcKeyboardKey key);      /* 按下 */
-
-int hidtc_keyboard_simulator_release_key_native(int32_t nativeKey); /* 抬起（原生键值）*/
-int hidtc_keyboard_simulator_release_key(HidtcKeyboardKey key);     /* 抬起 */
-
-/* 点击 = 按下 + 可选延迟 + 抬起 */
-int hidtc_keyboard_simulator_click_key_native(int32_t nativeKey, size_t intervalMs);
-int hidtc_keyboard_simulator_click_key(HidtcKeyboardKey key,     size_t intervalMs);
+// 检查当前构建是否包含指定的 HID 模块。
+int hidt_is_hid_type_supported(HidtHidType hid_type);
 ```
 
 ---
 
-### 鼠标 Hooker（监听器）
+### 键盘 — 按键工具函数
+
+> 仅在定义了 `HIDTOOL_C_HAS_KEYBOARD` 时可用。
 
 ```c
-int              hidtc_mouse_hooker_is_button_pressed(HidtcMouseButton button);
-HidtcAbsolutePos hidtc_mouse_hooker_get_cursor_pos(void); /* Linux 上始终返回 {0,0} */
+// 将 HidtKeyboardKey 转换为平台原生键值（无映射时返回 -1）。
+int32_t       hidt_keyboard_key_to_native_key  (HidtKeyboardKey key);
 
-int  hidtc_mouse_hooker_run(void);
-void hidtc_mouse_hooker_stop(void);
-int  hidtc_mouse_hooker_is_running(void);
-
-int hidtc_mouse_hooker_set_event_handler(HidtcMouseEventHandler handler, void* userData);
-int hidtc_mouse_hooker_set_user_data(void* userData);
+// 将平台原生键值转换为 HidtKeyboardKey（无映射时返回 HIDT_KBDKEY_NONE）。
+HidtKeyboardKey hidt_keyboard_key_from_native_key(int32_t native_key);
 ```
 
 ---
 
-### 鼠标 Simulator（模拟器）
+### 键盘 — 钩子（监听）
+
+> 仅在定义了 `HIDTOOL_C_HAS_KEYBOARD` 时可用。
+
+键盘钩子是全局单例，启动后在自己的内部线程中运行。
 
 ```c
-/* 获取当前显示器绝对移动的有效坐标范围 */
-HidtcAbsolutePosRange hidtc_mouse_simulator_get_absolute_move_range(void);
+// 查询某原生键是否当前被按住（可在 run() 之前调用）。
+int  hidt_keyboard_hooker_is_key_pressed(int32_t native_key);
 
-int    hidtc_mouse_simulator_initialize(void);
-void   hidtc_mouse_simulator_destroy(void);
-int    hidtc_mouse_simulator_is_initialized(void);
+// 启动 / 停止事件监听线程。
+int  hidt_keyboard_hooker_run(void);         // 成功返回非零值
+void hidt_keyboard_hooker_stop(void);
+int  hidt_keyboard_hooker_is_running(void);  // 运行中返回非零值
 
-int    hidtc_mouse_simulator_send_event(const HidtcMouseEvent* event);
-size_t hidtc_mouse_simulator_send_events(const HidtcMouseEvent* events, size_t count);
+// 注册回调（传 NULL 取消注册）。
+int  hidt_keyboard_hooker_set_event_handler(HidtKeyboardEventHandler handler, void* user_data);
 
-/* 移动 */
-int hidtc_mouse_simulator_move_to(int32_t x, int32_t y);         /* 绝对移动 */
-int hidtc_mouse_simulator_move_by(int32_t dx, int32_t dy);        /* 相对移动 */
+// 仅更新 user_data，不改变回调。
+int  hidt_keyboard_hooker_set_user_data(void* user_data);
+```
 
-/* 滚轮 — 单位 120，正值远离用户，负值朝向用户 */
-int hidtc_mouse_simulator_wheel(int32_t wheelDelta);
+> **线程安全**：切勿在事件回调内部调用 `hidt_keyboard_hooker_stop()`。回调在钩子的内部线程上运行，在该线程中调用 stop() 会导致死锁（`EDEADLK`）。请使用原子标志并在主线程中调用 stop()。
 
-/* 在当前光标位置执行按键操作 */
-int hidtc_mouse_simulator_press_button(HidtcMouseButton button);
-int hidtc_mouse_simulator_release_button(HidtcMouseButton button);
-int hidtc_mouse_simulator_click_button(HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_double_click_button(HidtcMouseButton button,
-                                               size_t interval1Ms, size_t interval2Ms);
+---
 
-/* 先移动到指定绝对坐标，再执行按键操作 */
-int hidtc_mouse_simulator_wheel_at(int32_t x, int32_t y, int32_t wheelDelta, size_t intervalMs);
-int hidtc_mouse_simulator_press_button_at(int32_t x, int32_t y,
-                                           HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_release_button_at(int32_t x, int32_t y,
-                                             HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_click_button_at(int32_t x, int32_t y, HidtcMouseButton button,
-                                           size_t interval1Ms, size_t interval2Ms);
-int hidtc_mouse_simulator_double_click_button_at(int32_t x, int32_t y, HidtcMouseButton button,
-                                                  size_t interval1Ms, size_t interval2Ms,
-                                                  size_t interval3Ms);
+### 键盘 — 模拟器
 
-/* 拖拽 */
-int hidtc_mouse_simulator_drag_to(int32_t x, int32_t y, HidtcMouseButton button);
-/* 从当前位置拖拽到目标（按下 + 拖 + 释放） */
-int hidtc_mouse_simulator_drag_combo(int32_t endX, int32_t endY,
-                                      HidtcMouseButton button, size_t intervalMs);
-/* 从指定起点拖拽到终点（移动 + 按下 + 拖 + 释放） */
-int hidtc_mouse_simulator_drag_combo_from(int32_t startX, int32_t startY,
-                                           int32_t endX,   int32_t endY,
-                                           HidtcMouseButton button,
-                                           size_t interval1Ms, size_t interval2Ms);
+> 仅在定义了 `HIDTOOL_C_HAS_KEYBOARD` 时可用。
+
+键盘模拟器使用前必须初始化，使用完毕后需要销毁。
+
+```c
+int  hidt_keyboard_simulator_initialize(void);   // 成功返回非零值
+void hidt_keyboard_simulator_destroy(void);
+int  hidt_keyboard_simulator_is_initialized(void);
+
+// 发送原始事件。
+int    hidt_keyboard_simulator_send_event (const HidtKeyboardEvent* event);
+size_t hidt_keyboard_simulator_send_events(const HidtKeyboardEvent* events, size_t count);
+
+// 按原生键值按下 / 释放。
+int hidt_keyboard_simulator_press_key_native  (int32_t native_key);
+int hidt_keyboard_simulator_release_key_native(int32_t native_key);
+
+// 按 HidtKeyboardKey 按下 / 释放。
+int hidt_keyboard_simulator_press_key  (HidtKeyboardKey key);
+int hidt_keyboard_simulator_release_key(HidtKeyboardKey key);
+
+// 点击（按下 + 可选延迟 + 释放），按原生键值。
+// interval：按下与释放之间的延迟（毫秒）。
+int hidt_keyboard_simulator_click_key_native(int32_t native_key, uint64_t interval);
+
+// 按 HidtKeyboardKey 点击。
+int hidt_keyboard_simulator_click_key(HidtKeyboardKey key, uint64_t interval);
 ```
 
 ---
 
-### HID Hooker（统一监听器）
+### 鼠标 — 钩子（监听）
 
-将键盘和鼠标监听合并为单一回调接口。
+> 仅在定义了 `HIDTOOL_C_HAS_MOUSE` 时可用。
 
 ```c
-int hidtc_hid_hooker_is_support_block_event_propagation(void);
-int hidtc_hid_hooker_is_key_pressed(int32_t nativeKey);          /* 仅键盘 */
-int hidtc_hid_hooker_is_button_pressed(HidtcMouseButton button);  /* 仅鼠标 */
-HidtcAbsolutePos hidtc_hid_hooker_get_cursor_pos(void);           /* 仅鼠标 */
+// 查询某鼠标按键是否当前被按住。
+int            hidt_mouse_hooker_is_button_pressed(HidtMouseButton button);
 
-int  hidtc_hid_hooker_run(void);
-void hidtc_hid_hooker_stop(void);
-int  hidtc_hid_hooker_is_running(void);
+// 获取当前光标位置（Linux 上始终返回 {0,0}）。
+HidtAbsolutePos hidt_mouse_hooker_get_cursor_pos(void);
 
-int hidtc_hid_hooker_set_event_handler(HidtcHidEventHandler handler, void* userData);
-int hidtc_hid_hooker_set_user_data(void* userData);
+// 启动 / 停止。
+int  hidt_mouse_hooker_run(void);
+void hidt_mouse_hooker_stop(void);
+int  hidt_mouse_hooker_is_running(void);
+
+// 注册回调。
+int hidt_mouse_hooker_set_event_handler(HidtMouseEventHandler handler, void* user_data);
+int hidt_mouse_hooker_set_user_data(void* user_data);
 ```
 
 ---
 
-### HID Simulator（统一模拟器）
+### 鼠标 — 模拟器
 
-通过统一接口发送键盘、鼠标和休眠事件。
+> 仅在定义了 `HIDTOOL_C_HAS_MOUSE` 时可用。
 
 ```c
-int    hidtc_hid_simulator_initialize(void);
-void   hidtc_hid_simulator_destroy(void);
-int    hidtc_hid_simulator_is_initialized(void);
+int  hidt_mouse_simulator_initialize(void);
+void hidt_mouse_simulator_destroy(void);
+int  hidt_mouse_simulator_is_initialized(void);
 
-int    hidtc_hid_simulator_send_event(const HidtcHidEvent* event);
-size_t hidtc_hid_simulator_send_events(const HidtcHidEvent* events, size_t count);
+// 发送原始事件。
+int    hidt_mouse_simulator_send_event (const HidtMouseEvent* event);
+size_t hidt_mouse_simulator_send_events(const HidtMouseEvent* events, size_t count);
+
+// ---- 移动 ----
+// 移动光标到屏幕绝对坐标。
+int hidt_mouse_simulator_move_to(int32_t x, int32_t y);
+
+// 相对当前位置移动光标。
+int hidt_mouse_simulator_move_by(int32_t dx, int32_t dy);
+
+// ---- 滚轮 ----
+// delta：正值向远离用户方向滚动；负值向用户方向滚动。每格 = 120 单位。
+int hidt_mouse_simulator_wheel(int32_t delta);
+
+// ---- 按钮 ----
+int hidt_mouse_simulator_press_button  (HidtMouseButton button);
+int hidt_mouse_simulator_release_button(HidtMouseButton button);
+
+// 点击（按下 + 可选延迟 + 释放）。
+// interval：按下与释放之间的延迟（毫秒）。
+int hidt_mouse_simulator_click_button(HidtMouseButton button, uint64_t interval);
+
+// 双击。interval = 两次点击间隔；press_interval = 按下/释放延迟。
+int hidt_mouse_simulator_double_click_button(
+    HidtMouseButton button, uint64_t interval, uint64_t press_interval);
+
+// ---- 拖拽 ----
+// 从 (from_x, from_y) 拖拽到 (to_x, to_y)，按住指定按钮。
+// interval：移动步骤间延迟（毫秒）；press_interval：按下/释放延迟（毫秒）。
+int hidt_mouse_simulator_drag_combo_from(
+    int32_t from_x, int32_t from_y,
+    int32_t to_x,   int32_t to_y,
+    HidtMouseButton button,
+    uint64_t interval, uint64_t press_interval);
+```
+
+---
+
+### 统一 HID 钩子
+
+通过单个回调同时监听键盘和鼠标事件，内部分发到各设备钩子。
+
+```c
+int  hidt_hid_hooker_run(void);
+void hidt_hid_hooker_stop(void);
+int  hidt_hid_hooker_is_running(void);
+
+int hidt_hid_hooker_set_event_handler(HidtHidEventHandler handler, void* user_data);
+int hidt_hid_hooker_set_user_data(void* user_data);
 ```
 
 ---
 
 ## 使用示例
 
-### 示例 1 — 监听全部键盘事件
+### 键盘监听
 
 ```c
 #include <hidtool_c/hidtool_c.h>
 #include <stdio.h>
 
-#ifdef _WIN32
-#  include <windows.h>
-#  define SLEEP_MS(ms) Sleep(ms)
-#else
-#  include <unistd.h>
-#  define SLEEP_MS(ms) usleep((ms) * 1000)
-#endif
-
-int on_key_event(const HidtcKeyboardEvent* event, void* userData)
+static int on_keyboard_event(const HidtKeyboardEvent* event, void* user_data)
 {
-    (void)userData;
-    if (event->type == HIDTC_KBD_ET_PRESS)
-    {
-        HidtcKeyboardKey key = hidtc_keyboard_key_from_native_key(event->nativeKey);
-        printf("[按下]   原生键值=0x%X  枚举值=0x%X\n", event->nativeKey, (unsigned)key);
+    (void)user_data;
+    if (event->type == HIDT_KBD_ET_PRESS) {
+        HidtKeyboardKey key = hidt_keyboard_key_from_native_key(event->u.native_key);
+        printf("[按下]   原生键=0x%08X  逻辑键=0x%04X\n",
+               (unsigned)event->u.native_key, (unsigned)key);
+    } else if (event->type == HIDT_KBD_ET_RELEASE) {
+        HidtKeyboardKey key = hidt_keyboard_key_from_native_key(event->u.native_key);
+        printf("[释放]   原生键=0x%08X  逻辑键=0x%04X\n",
+               (unsigned)event->u.native_key, (unsigned)key);
     }
-    else if (event->type == HIDTC_KBD_ET_RELEASE)
-    {
-        printf("[抬起] 原生键值=0x%X\n", event->nativeKey);
-    }
-    return 1; /* 传播事件 */
+    return 1; // 继续传播
 }
 
 int main(void)
 {
-    hidtc_keyboard_hooker_set_event_handler(on_key_event, NULL);
-    hidtc_keyboard_hooker_run();
-    printf("正在监听键盘事件，按任意键（Ctrl+C 退出）...\n");
+    hidt_keyboard_hooker_set_event_handler(on_keyboard_event, NULL);
 
-    while (hidtc_keyboard_hooker_is_running())
-        SLEEP_MS(100);
-
-    return 0;
-}
-```
-
----
-
-### 示例 2 — 模拟键盘输入（输入 "Hello"）
-
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-
-int main(void)
-{
-    if (!hidtc_keyboard_simulator_initialize())
-    {
-        fprintf(stderr, "键盘模拟器初始化失败。\n");
+    if (!hidt_keyboard_hooker_run()) {
+        fprintf(stderr, "启动键盘钩子失败。\n");
         return 1;
     }
 
-    /* 输入 "Hello"：Shift+H, e, l, l, o */
-    hidtc_keyboard_simulator_press_key(HIDTC_KBDKEY_SHIFT);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_H, 0);
-    hidtc_keyboard_simulator_release_key(HIDTC_KBDKEY_SHIFT);
+    printf("按 ENTER 停止...\n");
+    getchar();
 
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_E, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_L, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_L, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_O, 0);
-
-    hidtc_keyboard_simulator_destroy();
+    hidt_keyboard_hooker_stop();
     return 0;
 }
 ```
 
 ---
 
-### 示例 3 — 模拟快捷键 Ctrl+C（复制）
-
-```c
-#include <hidtool_c/hidtool_c.h>
-
-int main(void)
-{
-    hidtc_keyboard_simulator_initialize();
-
-    /* 构造并批量发送 4 个事件 */
-    HidtcKeyboardEvent events[4];
-
-    events[0].type      = HIDTC_KBD_ET_PRESS;
-    events[0].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[0].timestamp = 0;
-
-    events[1].type      = HIDTC_KBD_ET_PRESS;
-    events[1].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_C);
-    events[1].timestamp = 0;
-
-    events[2].type      = HIDTC_KBD_ET_RELEASE;
-    events[2].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_C);
-    events[2].timestamp = 0;
-
-    events[3].type      = HIDTC_KBD_ET_RELEASE;
-    events[3].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[3].timestamp = 0;
-
-    hidtc_keyboard_simulator_send_events(events, 4);
-    hidtc_keyboard_simulator_destroy();
-    return 0;
-}
-```
-
----
-
-### 示例 4 — 监听鼠标事件
+### 键盘模拟
 
 ```c
 #include <hidtool_c/hidtool_c.h>
 #include <stdio.h>
 
-int on_mouse_event(const HidtcMouseEvent* event, void* userData)
+int main(void)
 {
-    (void)userData;
-    switch (event->type)
-    {
-    case HIDTC_MS_ET_ABS_MOVE:
-        printf("[移动]   x=%d  y=%d\n", event->absPos.x, event->absPos.y);
-        break;
-    case HIDTC_MS_ET_WHEEL:
-        printf("[滚轮]   delta=%d\n", event->wheelDelta);
-        break;
-    case HIDTC_MS_ET_PRESS:
-        printf("[按下]   按键=%d\n", (int)event->button);
-        break;
-    case HIDTC_MS_ET_RELEASE:
-        printf("[抬起]   按键=%d\n", (int)event->button);
-        break;
-    default:
-        break;
+    if (!hidt_keyboard_simulator_initialize()) {
+        fprintf(stderr, "初始化键盘模拟器失败。\n");
+        return 1;
+    }
+
+    printf("请切换到文本编辑器，然后按 ENTER...\n");
+    getchar();
+
+    // 输入大写字母 'A'
+    hidt_keyboard_simulator_press_key(HIDT_KBDKEY_SHIFT_LEFT);
+    hidt_keyboard_simulator_click_key(HIDT_KBDKEY_A, 0);
+    hidt_keyboard_simulator_release_key(HIDT_KBDKEY_SHIFT_LEFT);
+
+    // 发送 Ctrl+A（全选）
+    hidt_keyboard_simulator_press_key(HIDT_KBDKEY_CTRL_LEFT);
+    hidt_keyboard_simulator_click_key(HIDT_KBDKEY_A, 0);
+    hidt_keyboard_simulator_release_key(HIDT_KBDKEY_CTRL_LEFT);
+
+    hidt_keyboard_simulator_destroy();
+    return 0;
+}
+```
+
+---
+
+### 鼠标监听
+
+```c
+#include <hidtool_c/hidtool_c.h>
+#include <stdio.h>
+
+static int on_mouse_event(const HidtMouseEvent* event, void* user_data)
+{
+    (void)user_data;
+    switch (event->type) {
+        case HIDT_MS_ET_ABS_MOVE:
+            printf("[绝对移动] x=%d y=%d\n",
+                   event->u.abs_pos.x, event->u.abs_pos.y);
+            break;
+        case HIDT_MS_ET_PRESS:
+            printf("[按下]    按键=%d\n", (int)event->u.button);
+            break;
+        case HIDT_MS_ET_WHEEL:
+            printf("[滚轮]    delta=%d\n", event->u.wheel_delta);
+            break;
+        default:
+            break;
     }
     return 1;
 }
 
 int main(void)
 {
-    hidtc_mouse_hooker_set_event_handler(on_mouse_event, NULL);
-    hidtc_mouse_hooker_run();
-    printf("正在监听鼠标事件，持续 10 秒...\n");
-
-#ifdef _WIN32
-    #include <windows.h>
-    Sleep(10000);
-#else
-    #include <unistd.h>
-    sleep(10);
-#endif
-
-    hidtc_mouse_hooker_stop();
-    return 0;
-}
-```
-
----
-
-### 示例 5 — 模拟鼠标：移动、点击、滚动
-
-```c
-#include <hidtool_c/hidtool_c.h>
-
-#ifdef _WIN32
-#  include <windows.h>
-#  define SLEEP_MS(ms) Sleep(ms)
-#else
-#  include <unistd.h>
-#  define SLEEP_MS(ms) usleep((ms) * 1000)
-#endif
-
-int main(void)
-{
-    if (!hidtc_mouse_simulator_initialize())
+    hidt_mouse_hooker_set_event_handler(on_mouse_event, NULL);
+    if (!hidt_mouse_hooker_run()) {
+        fprintf(stderr, "启动鼠标钩子失败。\n");
         return 1;
+    }
 
-    /* 获取屏幕坐标范围 */
-    HidtcAbsolutePosRange range = hidtc_mouse_simulator_get_absolute_move_range();
-    int32_t cx = (range.min_x + range.max_x) / 2;
-    int32_t cy = (range.min_y + range.max_y) / 2;
+    printf("按 ENTER 停止...\n");
+    getchar();
 
-    /* 移动到屏幕中央 */
-    hidtc_mouse_simulator_move_to(cx, cy);
-    SLEEP_MS(200);
-
-    /* 单击左键 */
-    hidtc_mouse_simulator_click_button(HIDTC_MSBTN_LEFT, 50);
-    SLEEP_MS(200);
-
-    /* 双击左键 */
-    hidtc_mouse_simulator_double_click_button(HIDTC_MSBTN_LEFT, 50, 100);
-    SLEEP_MS(200);
-
-    /* 向上滚动 */
-    hidtc_mouse_simulator_wheel(120);
-    SLEEP_MS(100);
-
-    /* 相对移动 */
-    hidtc_mouse_simulator_move_by(50, 50);
-    SLEEP_MS(100);
-
-    /* 从 (cx,cy) 拖拽到 (cx+200, cy+100) */
-    hidtc_mouse_simulator_drag_combo_from(cx, cy, cx + 200, cy + 100,
-                                           HIDTC_MSBTN_LEFT, 10, 0);
-
-    hidtc_mouse_simulator_destroy();
+    hidt_mouse_hooker_stop();
     return 0;
 }
 ```
 
 ---
 
-### 示例 6 — 统一 HID 监听器与用户数据
+### 鼠标模拟
 
 ```c
 #include <hidtool_c/hidtool_c.h>
 #include <stdio.h>
 
-typedef struct {
-    int keyPressCount;
-    int mouseClickCount;
-} Stats;
-
-int on_hid_event(const HidtcHidEvent* event, void* userData)
-{
-    Stats* stats = (Stats*)userData;
-
-    if (event->type == HIDTC_HID_ET_KEYBOARD &&
-        event->keyboardEvent.type == HIDTC_KBD_ET_PRESS)
-    {
-        stats->keyPressCount++;
-        printf("键盘按下总次数：%d\n", stats->keyPressCount);
-    }
-    else if (event->type == HIDTC_HID_ET_MOUSE &&
-             event->mouseEvent.type == HIDTC_MS_ET_PRESS)
-    {
-        stats->mouseClickCount++;
-        printf("鼠标点击总次数：%d\n", stats->mouseClickCount);
-    }
-    return 1;
-}
-
 int main(void)
 {
-    Stats stats = {0, 0};
-
-    hidtc_hid_hooker_set_event_handler(on_hid_event, &stats);
-    hidtc_hid_hooker_run();
-    printf("正在监控输入，按 Ctrl+C 退出。\n");
-
-    while (hidtc_hid_hooker_is_running())
-    {
-#ifdef _WIN32
-        Sleep(100);
-#else
-        usleep(100000);
-#endif
+    if (!hidt_mouse_simulator_initialize()) {
+        fprintf(stderr, "初始化鼠标模拟器失败。\n");
+        return 1;
     }
 
-    printf("统计结果 — 按键：%d 次，点击：%d 次\n",
-           stats.keyPressCount, stats.mouseClickCount);
+    // 移动到 (800, 600) 并左键单击
+    hidt_mouse_simulator_move_to(800, 600);
+    hidt_mouse_simulator_click_button(HIDT_MSBTN_LEFT, 50);
+
+    // 向下滚动 3 格
+    hidt_mouse_simulator_wheel(-3 * 120);
+
+    // 从 (400, 400) 拖拽到 (600, 400)
+    hidt_mouse_simulator_drag_combo_from(400, 400, 600, 400, HIDT_MSBTN_LEFT, 0, 0);
+
+    hidt_mouse_simulator_destroy();
     return 0;
 }
 ```
 
 ---
 
-### 示例 7 — 屏蔽特定按键（需平台支持）
+## 注意事项
 
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-
-int on_key_event(const HidtcKeyboardEvent* event, void* userData)
-{
-    if (event->type == HIDTC_KBD_ET_PRESS)
-    {
-        HidtcKeyboardKey key = hidtc_keyboard_key_from_native_key(event->nativeKey);
-        if (key == HIDTC_KBDKEY_ESCAPE)
-        {
-            printf("Escape 键已被屏蔽。\n");
-            return 0; /* 阻断传播 */
-        }
-    }
-    return 1; /* 其余按键正常传播 */
-}
-
-int main(void)
-{
-    if (!hidtc_hid_hooker_is_support_block_event_propagation())
-    {
-        printf("当前平台不支持阻断事件传播。\n");
-        return 1;
-    }
-
-    hidtc_keyboard_hooker_set_event_handler(on_key_event, NULL);
-    hidtc_keyboard_hooker_run();
-    printf("运行中，Escape 键已屏蔽，按 Ctrl+C 退出。\n");
-
-#ifdef _WIN32
-    Sleep(INFINITE);
-#else
-    pause();
-#endif
-    return 0;
-}
-```
-
----
-
-### 示例 8 — 通过统一模拟器发送混合事件序列
-
-```c
-#include <hidtool_c/hidtool_c.h>
-
-int main(void)
-{
-    if (!hidtc_hid_simulator_initialize())
-        return 1;
-
-    HidtcHidEvent events[5];
-
-    /* 事件 0：按下 Ctrl */
-    events[0].type                        = HIDTC_HID_ET_KEYBOARD;
-    events[0].keyboardEvent.type          = HIDTC_KBD_ET_PRESS;
-    events[0].keyboardEvent.nativeKey     =
-        hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[0].keyboardEvent.timestamp     = 0;
-
-    /* 事件 1：按下 A */
-    events[1].type                        = HIDTC_HID_ET_KEYBOARD;
-    events[1].keyboardEvent.type          = HIDTC_KBD_ET_PRESS;
-    events[1].keyboardEvent.nativeKey     =
-        hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_A);
-    events[1].keyboardEvent.timestamp     = 0;
-
-    /* 事件 2：抬起 A */
-    events[2].type                        = HIDTC_HID_ET_KEYBOARD;
-    events[2].keyboardEvent.type          = HIDTC_KBD_ET_RELEASE;
-    events[2].keyboardEvent.nativeKey     =
-        hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_A);
-    events[2].keyboardEvent.timestamp     = 0;
-
-    /* 事件 3：抬起 Ctrl */
-    events[3].type                        = HIDTC_HID_ET_KEYBOARD;
-    events[3].keyboardEvent.type          = HIDTC_KBD_ET_RELEASE;
-    events[3].keyboardEvent.nativeKey     =
-        hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[3].keyboardEvent.timestamp     = 0;
-
-    /* 事件 4：休眠 100ms */
-    events[4].type    = HIDTC_HID_ET_SLEEP;
-    events[4].sleepMs = 100;
-
-    hidtc_hid_simulator_send_events(events, 5);
-    hidtc_hid_simulator_destroy();
-    return 0;
-}
-```
+- **阻断事件传播**：从回调中返回 `0` 可阻止事件传递给其他程序。此功能并非所有平台均支持——详情请参阅上游 [hidtool 文档](https://github.com/JaderoChan/hidtool)。
+- **回调中不可调用 stop**：切勿在事件回调内部调用 `hidt_*_hooker_stop()`。回调运行在钩子的内部线程中，在此线程调用 stop() 会导致自身 join（`EDEADLK` / 死锁）。请使用原子标志，并在主线程中调用 stop()。
+- **macOS 模拟**：模拟函数始终返回成功，即使操作未实际生效。请为宿主进程授予辅助功能权限。
+- **Linux 光标位置**：`hidt_mouse_hooker_get_cursor_pos()` 在 Linux 上始终返回 `{0, 0}`。
+- **滚轮单位**：一格滚动 = 120 单位。正值表示向远离用户方向滚动；负值表示向用户方向滚动。

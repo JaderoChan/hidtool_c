@@ -1,58 +1,51 @@
-# HID Tool C — English Documentation
+# hidtool_c — C Bindings for hidtool
 
 [[**简体中文**](README_ZH.md) | **English**]
 
-C language bindings for the [hidtool](https://github.com/JaderoChan/hidtool) C++ library.
-Provides a pure C API for cross-platform keyboard and mouse input simulation and global event listening.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/JaderoChan/hidtool_c)
+[![Language: C](https://img.shields.io/badge/language-C99-lightgrey.svg)](https://en.wikipedia.org/wiki/C99)
+[![Upstream](https://img.shields.io/badge/upstream-hidtool-orange.svg)](https://github.com/JaderoChan/hidtool)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-informational.svg)](https://github.com/JaderoChan/hidtool_c)
+
+Pure C bindings for the [hidtool](https://github.com/JaderoChan/hidtool) C++ library, exposing a complete C99 API for global keyboard / mouse event listening and input simulation.
 
 ---
 
 ## Table of Contents
 
-- [HID Tool C — English Documentation](#hid-tool-c--english-documentation)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Platform Support](#platform-support)
-  - [Requirements](#requirements)
-  - [Build](#build)
-    - [CMake Options](#cmake-options)
-  - [Integration](#integration)
-    - [CMake — add\_subdirectory](#cmake--add_subdirectory)
-  - [API Reference](#api-reference)
-    - [Types](#types)
-      - [Position Types](#position-types)
-      - [`HidtcMouseButton`](#hidtcmousebutton)
-      - [`HidtcKeyboardEvent`](#hidtckeyboardevent)
-      - [`HidtcMouseEvent`](#hidtcmouseevent)
-      - [`HidtcHidEvent`](#hidtchidevent)
-      - [Callback Types](#callback-types)
-    - [HID Type Utilities](#hid-type-utilities)
-    - [Keyboard Key Utilities](#keyboard-key-utilities)
-    - [Keyboard Hooker](#keyboard-hooker)
-    - [Keyboard Simulator](#keyboard-simulator)
-    - [Mouse Hooker](#mouse-hooker)
-    - [Mouse Simulator](#mouse-simulator)
-    - [HID Hooker (Unified)](#hid-hooker-unified)
-    - [HID Simulator (Unified)](#hid-simulator-unified)
-  - [Usage Examples](#usage-examples)
-    - [Example 1 — Monitor All Keyboard Events](#example-1--monitor-all-keyboard-events)
-    - [Example 2 — Simulate Keyboard Input (Type "Hello")](#example-2--simulate-keyboard-input-type-hello)
-    - [Example 3 — Simulate Ctrl+C (Copy)](#example-3--simulate-ctrlc-copy)
-    - [Example 4 — Monitor Mouse Events](#example-4--monitor-mouse-events)
-    - [Example 5 — Simulate Mouse: Move, Click, Scroll](#example-5--simulate-mouse-move-click-scroll)
-    - [Example 6 — Unified HID Listener with User Data](#example-6--unified-hid-listener-with-user-data)
-    - [Example 7 — Block a Specific Key (Platform Support Required)](#example-7--block-a-specific-key-platform-support-required)
+- [Features](#features)
+- [Platform Support](#platform-support)
+- [Requirements](#requirements)
+- [Build](#build)
+- [Integration](#integration)
+- [API Overview](#api-overview)
+  - [Types and Enumerations](#types-and-enumerations)
+  - [General HID Utilities](#general-hid-utilities)
+  - [Keyboard — Key Utilities](#keyboard--key-utilities)
+  - [Keyboard — Hooker](#keyboard--hooker)
+  - [Keyboard — Simulator](#keyboard--simulator)
+  - [Mouse — Hooker](#mouse--hooker)
+  - [Mouse — Simulator](#mouse--simulator)
+  - [Unified HID Hooker](#unified-hid-hooker)
+- [Usage Examples](#usage-examples)
+  - [Keyboard Monitor](#keyboard-monitor)
+  - [Keyboard Simulator](#keyboard-simulator)
+  - [Mouse Monitor](#mouse-monitor)
+  - [Mouse Simulator](#mouse-simulator)
+- [Notes and Caveats](#notes-and-caveats)
 
 ---
 
 ## Features
 
-- **Keyboard Module**: Global keyboard event listening, keyboard input simulation
-- **Mouse Module**: Global mouse event listening, mouse input simulation (move, click, wheel, drag)
-- Pure C header (`hidtool_c.h`) — no C++ required in your project
-- Cross-platform: Windows, macOS, Linux
-- Supports static / shared library builds
-- Thread-safe callback registration via atomic stores
+- **Pure C99 API** — include a single header and link the library; no C++ compiler required in your project.
+- **Keyboard Module** — global keyboard event listening and keyboard input simulation.
+- **Mouse Module** — global mouse event listening, mouse movement (absolute / relative), clicking, scrolling, and dragging.
+- **Unified HID Hooker** — receive both keyboard and mouse events through a single callback.
+- Cross-platform: Windows, macOS, Linux.
+- Static / shared library builds.
+- Thread-safe singleton hookers and simulators.
 
 ---
 
@@ -60,20 +53,21 @@ Provides a pure C API for cross-platform keyboard and mouse input simulation and
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Windows  | ✅     | —     |
-| macOS    | ✅     | Requires Accessibility permissions |
-| Linux    | ✅     | Requires administrator privileges  |
+| Windows  | ✅     | — |
+| macOS    | ✅     | Requires **Accessibility** permissions for event listening and simulation |
+| Linux    | ✅     | Requires **administrator / root** privileges (access to `/dev/input` and `/dev/uinput`) |
 
-> **macOS**: Due to macOS API design, simulation functions cannot confirm success.
-> Even when a function returns non-zero, the action may have no effect unless your application has been granted **Accessibility** permissions.
+> **macOS**: Due to the macOS API design, simulation functions cannot confirm whether an action was applied. Grant the **Accessibility** permission to your application.
+>
+> **Linux**: On Linux, `hidt_mouse_hooker_get_cursor_pos()` always returns `{0, 0}` because absolute cursor position is not available through the raw input API.
 
 ---
 
 ## Requirements
 
-- CMake >= 3.26
-- C11 compiler (anonymous unions used in event structs)
-- C++11 compiler (for building the binding layer)
+- CMake ≥ 3.26
+- A **C99** compiler for your project
+- A **C++11** compiler to build hidtool\_c itself (the binding layer is compiled as C++)
 - **macOS**: CoreFoundation, Carbon, CoreGraphics (found automatically by CMake)
 - **Linux**: pthreads
 
@@ -82,243 +76,506 @@ Provides a pure C API for cross-platform keyboard and mouse input simulation and
 ## Build
 
 ```bash
-git clone --recurse-submodules <this-repo-url>
+git clone --recurse-submodules https://github.com/JaderoChan/hidtool_c.git
 cd hidtool_c
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake -B build [options]
 cmake --build build
 ```
+
+> If you already cloned without `--recurse-submodules`, run `git submodule update --init --recursive`.
 
 ### CMake Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `HIDTOOL_BUILD_WITH_KEYBOARD`  | `ON`  | Build keyboard module |
-| `HIDTOOL_BUILD_WITH_MOUSE`     | `ON`  | Build mouse module |
-| `HIDTOOL_C_BUILD_SHARED`       | `OFF` | Build `hidtool_c` as a shared library |
-| `HIDTOOL_C_BUILD_EXAMPLES`     | `OFF` | Build example programs in `example/` |
-
-To build with examples:
+| `HIDTOOL_C_BUILD_SHARED`   | `OFF` | Build hidtool\_c as a shared library |
+| `HIDTOOL_C_BUILD_EXAMPLES` | `OFF` | Build example programs |
+| `HIDTOOL_BUILD_WITH_KEYBOARD` | `ON`  | Include the keyboard module (propagated from hidtool) |
+| `HIDTOOL_BUILD_WITH_MOUSE`    | `ON`  | Include the mouse module (propagated from hidtool) |
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DHIDTOOL_C_BUILD_EXAMPLES=ON
-cmake --build build
-```
+# Default static library, Release build
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-```bash
-# Build shared library
+# Shared library
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DHIDTOOL_C_BUILD_SHARED=ON
 
 # Keyboard module only
 cmake -B build -DHIDTOOL_BUILD_WITH_MOUSE=OFF
+
+# With examples
+cmake -B build -DHIDTOOL_C_BUILD_EXAMPLES=ON
 ```
 
 ---
 
 ## Integration
 
-### CMake — add_subdirectory
+### CMake — add\_subdirectory
 
 ```cmake
 add_subdirectory(hidtool_c)
-target_link_libraries(your_target PRIVATE hidtool_c)
+target_link_libraries(your_target PRIVATE hidtool_c::hidtool_c)
 ```
 
-Then include the header in your C source:
+### CMake — find\_package (after install)
+
+```bash
+cmake --install build --prefix /your/install/path
+```
+
+```cmake
+find_package(hidtool_c REQUIRED)
+target_link_libraries(your_target PRIVATE hidtool_c::hidtool_c)
+```
+
+### Manual Linking
+
+Include `include/hidtool_c/hidtool_c.h` and link against `libhidtool_c.a` (or `.lib` / `.so` / `.dll`).
+
+---
+
+## API Overview
+
+Include the single public header:
 
 ```c
 #include <hidtool_c/hidtool_c.h>
 ```
 
+The preprocessor macros `HIDTOOL_C_HAS_KEYBOARD` and `HIDTOOL_C_HAS_MOUSE` (defined in the generated `hidtool_c_config.h`) guard the keyboard and mouse API sections respectively. Check them at compile time when building optional code paths.
+
 ---
 
-## API Reference
+### Types and Enumerations
 
-### Types
+#### `HidtHidType`
+
+```c
+typedef enum HidtHidType {
+    HIDT_HIDTYPE_KEYBOARD = 0,
+    HIDT_HIDTYPE_MOUSE    = 1
+} HidtHidType;
+```
+
+#### `HidtMouseButton`
+
+```c
+typedef enum HidtMouseButton {
+    HIDT_MSBTN_NONE    = 0,
+    HIDT_MSBTN_LEFT    = 1,
+    HIDT_MSBTN_RIGHT   = 2,
+    HIDT_MSBTN_MIDDLE  = 3,
+    HIDT_MSBTN_BACK    = 4,
+    HIDT_MSBTN_FORWARD = 5
+} HidtMouseButton;
+```
 
 #### Position Types
 
 ```c
-typedef struct { int32_t x;  int32_t y;  } HidtcAbsolutePos;
-typedef struct { int32_t dx; int32_t dy; } HidtcRelativePos;
-typedef struct { int32_t min_x; int32_t max_x;
-                 int32_t min_y; int32_t max_y; } HidtcAbsolutePosRange;
+typedef struct HidtAbsolutePos { int32_t x;  int32_t y;  } HidtAbsolutePos;
+typedef struct HidtRelativePos { int32_t dx; int32_t dy; } HidtRelativePos;
+typedef struct HidtAbsolutePosRange {
+    int32_t min_x; int32_t max_x;
+    int32_t min_y; int32_t max_y;
+} HidtAbsolutePosRange;
 ```
 
-#### `HidtcMouseButton`
+#### `HidtKeyboardKey`
+
+A cross-platform enumeration that maps logical key names to portable values. Numeric keys map to their ASCII code (`0x30`–`0x39`), letter keys to their ASCII code (`0x41`–`0x5A`), and all other keys use values starting from `0x8000`. Common values:
+
+| Constant | Value |
+|----------|-------|
+| `HIDT_KBDKEY_NONE` | `0x0000` |
+| `HIDT_KBDKEY_A`–`HIDT_KBDKEY_Z` | `0x0041`–`0x005A` |
+| `HIDT_KBDKEY_0`–`HIDT_KBDKEY_9` | `0x0030`–`0x0039` |
+| `HIDT_KBDKEY_ENTER` | `0x8002` |
+| `HIDT_KBDKEY_ESCAPE` | `0x8039` |
+| `HIDT_KBDKEY_SPACE` | `0x8001` |
+| `HIDT_KBDKEY_SHIFT` / `_LEFT` / `_RIGHT` | `0x8060`–`0x8062` |
+| `HIDT_KBDKEY_CTRL` / `_LEFT` / `_RIGHT` | `0x805A`–`0x805C` |
+| `HIDT_KBDKEY_ALT` / `_LEFT` / `_RIGHT` | `0x805D`–`0x805F` |
+| `HIDT_KBDKEY_F1`–`HIDT_KBDKEY_F24` | `0x800F`–`0x8026` |
+
+Common aliases: `HIDT_KBDKEY_RETURN`, `HIDT_KBDKEY_ESC`, `HIDT_KBDKEY_FN`, `HIDT_KBDKEY_OPTION`.
+
+#### `HidtKeyboardEventType`
 
 ```c
-typedef enum {
-    HIDTC_MSBTN_NONE    = 0,
-    HIDTC_MSBTN_LEFT    = 1,
-    HIDTC_MSBTN_RIGHT   = 2,
-    HIDTC_MSBTN_MIDDLE  = 3,
-    HIDTC_MSBTN_BACK    = 4,
-    HIDTC_MSBTN_FORWARD = 5
-} HidtcMouseButton;
+typedef enum HidtKeyboardEventType {
+    HIDT_KBD_ET_NONE    = 0,
+    HIDT_KBD_ET_PRESS   = 1,
+    HIDT_KBD_ET_RELEASE = 2,
+    HIDT_KBD_ET_SLEEP   = 3
+} HidtKeyboardEventType;
 ```
 
-#### `HidtcKeyboardEvent`
+#### `HidtKeyboardEvent`
 
 ```c
-typedef struct {
-    HidtcKeyboardEventType type;   /* HIDTC_KBD_ET_NONE/PRESS/RELEASE/SLEEP */
+typedef struct HidtKeyboardEvent {
+    HidtKeyboardEventType type;
     union {
-        int32_t nativeKey;         /* ET_PRESS / ET_RELEASE */
-        size_t  sleepMs;           /* ET_SLEEP */
-    };
-    uint64_t timestamp;            /* nanoseconds */
-} HidtcKeyboardEvent;
+        int32_t  native_key; // ET_PRESS / ET_RELEASE: platform native key code
+        uint64_t sleep_ms;   // ET_SLEEP: sleep duration in milliseconds
+    } u;
+    uint64_t timestamp;      // nanoseconds since epoch
+} HidtKeyboardEvent;
 ```
 
-#### `HidtcMouseEvent`
+#### `HidtMouseEventType`
 
 ```c
-typedef struct {
-    HidtcMouseEventType type;
+typedef enum HidtMouseEventType {
+    HIDT_MS_ET_NONE     = 0,
+    HIDT_MS_ET_ABS_MOVE = 1,  // absolute cursor position
+    HIDT_MS_ET_REL_MOVE = 2,  // relative cursor delta
+    HIDT_MS_ET_WHEEL    = 3,  // scroll wheel
+    HIDT_MS_ET_DRAG     = 4,  // drag
+    HIDT_MS_ET_PRESS    = 5,  // button press
+    HIDT_MS_ET_RELEASE  = 6,  // button release
+    HIDT_MS_ET_SLEEP    = 7   // sleep (simulation only)
+} HidtMouseEventType;
+```
+
+#### `HidtMouseEvent`
+
+```c
+typedef struct HidtMouseEvent {
+    HidtMouseEventType type;
     union {
-        HidtcAbsolutePos absPos;   /* ET_ABS_MOVE */
-        HidtcRelativePos relPos;   /* ET_REL_MOVE */
-        int32_t          wheelDelta; /* ET_WHEEL, unit 120 */
+        HidtAbsolutePos abs_pos;      // ET_ABS_MOVE
+        HidtRelativePos rel_pos;      // ET_REL_MOVE
+        int32_t         wheel_delta;  // ET_WHEEL (unit: 120 per detent)
         struct {
-            HidtcAbsolutePos pos;
-            HidtcMouseButton button;
-        } drag;                    /* ET_DRAG */
-        HidtcMouseButton button;   /* ET_PRESS / ET_RELEASE */
-        size_t           sleepMs;  /* ET_SLEEP */
-    };
-    uint64_t timestamp;
-} HidtcMouseEvent;
+            HidtAbsolutePos pos;
+            HidtMouseButton button;
+        } drag;                       // ET_DRAG
+        HidtMouseButton button;       // ET_PRESS / ET_RELEASE
+        uint64_t        sleep_ms;     // ET_SLEEP
+    } u;
+    uint64_t timestamp;               // nanoseconds since epoch
+} HidtMouseEvent;
 ```
 
-#### `HidtcHidEvent`
+#### `HidtHidEvent`
+
+Unified event that wraps either a keyboard event, a mouse event, or a sleep marker.
 
 ```c
-typedef struct {
-    HidtcHidEventType type;        /* HID_ET_NONE/KEYBOARD/MOUSE/SLEEP */
+typedef enum HidtHidEventType {
+    HIDT_HID_ET_NONE     = 0,
+    HIDT_HID_ET_KEYBOARD = 1,
+    HIDT_HID_ET_MOUSE    = 2,
+    HIDT_HID_ET_SLEEP    = 3
+} HidtHidEventType;
+
+typedef struct HidtHidEvent {
+    HidtHidEventType type;
     union {
-        HidtcKeyboardEvent keyboardEvent;
-        HidtcMouseEvent    mouseEvent;
-        size_t             sleepMs;
-    };
-} HidtcHidEvent;
+        HidtKeyboardEvent keyboard_event; // HID_ET_KEYBOARD
+        HidtMouseEvent    mouse_event;    // HID_ET_MOUSE
+        uint64_t          sleep_ms;       // HID_ET_SLEEP
+    } u;
+} HidtHidEvent;
 ```
 
 #### Callback Types
 
 ```c
-/* Return non-zero to propagate the event; zero to block it. */
-typedef int (*HidtcKeyboardEventHandler)(const HidtcKeyboardEvent* event, void* userData);
-typedef int (*HidtcMouseEventHandler)   (const HidtcMouseEvent*    event, void* userData);
-typedef int (*HidtcHidEventHandler)     (const HidtcHidEvent*      event, void* userData);
-```
-
-> Blocking event propagation is not supported on all platforms. Check with
-> `hidtc_hid_hooker_is_support_block_event_propagation()`.
-
----
-
-### HID Type Utilities
-
-```c
-/* Returns non-zero if the specified HID type module is available at runtime. */
-int hidtc_is_hid_type_supported(HidtcHidType hidType);
+// Return non-zero to propagate; zero to block (platform support varies).
+typedef int (*HidtKeyboardEventHandler)(const HidtKeyboardEvent* event, void* user_data);
+typedef int (*HidtMouseEventHandler)  (const HidtMouseEvent*    event, void* user_data);
+typedef int (*HidtHidEventHandler)    (const HidtHidEvent*      event, void* user_data);
 ```
 
 ---
 
-### Keyboard Key Utilities
+### General HID Utilities
 
 ```c
-/* Convert HidtcKeyboardKey -> platform native key. Returns -1 if no mapping exists. */
-int32_t hidtc_keyboard_key_to_native_key(HidtcKeyboardKey key);
-
-/* Convert platform native key -> HidtcKeyboardKey. Returns HIDTC_KBDKEY_NONE if no mapping. */
-HidtcKeyboardKey hidtc_keyboard_key_from_native_key(int32_t nativeKey);
+// Check if a HID module is available in the current build.
+int hidt_is_hid_type_supported(HidtHidType hid_type);
 ```
-
-Common key constants (`HidtcKeyboardKey`):
-
-| Constant | Description |
-|----------|-------------|
-| `HIDTC_KBDKEY_0` – `HIDTC_KBDKEY_9` | Number row |
-| `HIDTC_KBDKEY_A` – `HIDTC_KBDKEY_Z` | Letter keys |
-| `HIDTC_KBDKEY_F1` – `HIDTC_KBDKEY_F24` | Function keys |
-| `HIDTC_KBDKEY_NUMPAD_0` – `HIDTC_KBDKEY_NUMPAD_9` | Numpad digits |
-| `HIDTC_KBDKEY_ENTER` / `HIDTC_KBDKEY_RETURN` | Enter |
-| `HIDTC_KBDKEY_ESCAPE` / `HIDTC_KBDKEY_ESC` | Escape |
-| `HIDTC_KBDKEY_SPACE` | Space |
-| `HIDTC_KBDKEY_BACKSPACE` | Backspace |
-| `HIDTC_KBDKEY_TAB` | Tab |
-| `HIDTC_KBDKEY_LEFT/RIGHT/UP/DOWN` | Arrow keys |
-| `HIDTC_KBDKEY_CTRL` / `HIDTC_KBDKEY_CTRL_LEFT` / `HIDTC_KBDKEY_CTRL_RIGHT` | Ctrl |
-| `HIDTC_KBDKEY_SHIFT` / `HIDTC_KBDKEY_SHIFT_LEFT` / `HIDTC_KBDKEY_SHIFT_RIGHT` | Shift |
-| `HIDTC_KBDKEY_ALT` / `HIDTC_KBDKEY_ALT_LEFT` / `HIDTC_KBDKEY_ALT_RIGHT` | Alt / Option |
-| `HIDTC_KBDKEY_META` / `HIDTC_KBDKEY_META_LEFT` / `HIDTC_KBDKEY_META_RIGHT` | Win / Command |
-| `HIDTC_KBDKEY_CAPS_LOCK` | Caps Lock |
-| `HIDTC_KBDKEY_DELETE` | Delete |
-| `HIDTC_KBDKEY_INSERT` | Insert |
 
 ---
 
-### Keyboard Hooker
+### Keyboard — Key Utilities
+
+> Available only when `HIDTOOL_C_HAS_KEYBOARD` is defined.
 
 ```c
-/* Check if a key is currently held down (by native key value). */
-int  hidtc_keyboard_hooker_is_key_pressed(int32_t nativeKey);
+// Convert a HidtKeyboardKey to the platform-native key code (-1 if no mapping).
+int32_t       hidt_keyboard_key_to_native_key  (HidtKeyboardKey key);
 
-/* Start / stop the global keyboard listener. */
-int  hidtc_keyboard_hooker_run(void);
-void hidtc_keyboard_hooker_stop(void);
-int  hidtc_keyboard_hooker_is_running(void);
-
-/* Register a callback. Pass NULL to unregister. */
-int hidtc_keyboard_hooker_set_event_handler(HidtcKeyboardEventHandler handler,
-                                             void* userData);
-/* Update userData without changing the callback. */
-int hidtc_keyboard_hooker_set_user_data(void* userData);
+// Convert a platform-native key code to HidtKeyboardKey (HIDT_KBDKEY_NONE if no mapping).
+HidtKeyboardKey hidt_keyboard_key_from_native_key(int32_t native_key);
 ```
 
-> Do **not** call `hidtc_keyboard_hooker_*` functions from inside the event callback.
+---
+
+### Keyboard — Hooker
+
+> Available only when `HIDTOOL_C_HAS_KEYBOARD` is defined.
+
+The keyboard hooker is a global singleton. It runs its own internal thread once started.
+
+```c
+// Query whether a native key is currently held down (can be called before run()).
+int  hidt_keyboard_hooker_is_key_pressed(int32_t native_key);
+
+// Start / stop the event listener thread.
+int  hidt_keyboard_hooker_run(void);         // returns non-zero on success
+void hidt_keyboard_hooker_stop(void);
+int  hidt_keyboard_hooker_is_running(void);  // returns non-zero if running
+
+// Register a callback (pass NULL to unregister).
+int  hidt_keyboard_hooker_set_event_handler(HidtKeyboardEventHandler handler, void* user_data);
+
+// Update user_data without changing the callback.
+int  hidt_keyboard_hooker_set_user_data(void* user_data);
+```
+
+> **Thread safety**: Do NOT call `hidt_keyboard_hooker_stop()` from inside the event callback. Signal the main thread (e.g., with an atomic flag) and call stop from there.
+
+---
+
+### Keyboard — Simulator
+
+> Available only when `HIDTOOL_C_HAS_KEYBOARD` is defined.
+
+The keyboard simulator must be initialized before use and destroyed when done.
+
+```c
+int  hidt_keyboard_simulator_initialize(void);   // returns non-zero on success
+void hidt_keyboard_simulator_destroy(void);
+int  hidt_keyboard_simulator_is_initialized(void);
+
+// Send raw event(s).
+int    hidt_keyboard_simulator_send_event (const HidtKeyboardEvent* event);
+size_t hidt_keyboard_simulator_send_events(const HidtKeyboardEvent* events, size_t count);
+
+// Press / release by native key code.
+int hidt_keyboard_simulator_press_key_native  (int32_t native_key);
+int hidt_keyboard_simulator_release_key_native(int32_t native_key);
+
+// Press / release by HidtKeyboardKey.
+int hidt_keyboard_simulator_press_key  (HidtKeyboardKey key);
+int hidt_keyboard_simulator_release_key(HidtKeyboardKey key);
+
+// Click (press + optional delay + release) by native key code.
+// interval: milliseconds between press and release.
+int hidt_keyboard_simulator_click_key_native(int32_t native_key, uint64_t interval);
+
+// Click by HidtKeyboardKey.
+int hidt_keyboard_simulator_click_key(HidtKeyboardKey key, uint64_t interval);
+```
+
+---
+
+### Mouse — Hooker
+
+> Available only when `HIDTOOL_C_HAS_MOUSE` is defined.
+
+```c
+// Query whether a mouse button is held down.
+int            hidt_mouse_hooker_is_button_pressed(HidtMouseButton button);
+
+// Get the current cursor position (always {0,0} on Linux).
+HidtAbsolutePos hidt_mouse_hooker_get_cursor_pos(void);
+
+// Start / stop.
+int  hidt_mouse_hooker_run(void);
+void hidt_mouse_hooker_stop(void);
+int  hidt_mouse_hooker_is_running(void);
+
+// Register a callback.
+int hidt_mouse_hooker_set_event_handler(HidtMouseEventHandler handler, void* user_data);
+int hidt_mouse_hooker_set_user_data(void* user_data);
+```
+
+---
+
+### Mouse — Simulator
+
+> Available only when `HIDTOOL_C_HAS_MOUSE` is defined.
+
+```c
+int  hidt_mouse_simulator_initialize(void);
+void hidt_mouse_simulator_destroy(void);
+int  hidt_mouse_simulator_is_initialized(void);
+
+// Send raw event(s).
+int    hidt_mouse_simulator_send_event (const HidtMouseEvent* event);
+size_t hidt_mouse_simulator_send_events(const HidtMouseEvent* events, size_t count);
+
+// ---- Movement ----
+// Move cursor to absolute screen coordinates.
+int hidt_mouse_simulator_move_to(int32_t x, int32_t y);
+
+// Move cursor relative to current position.
+int hidt_mouse_simulator_move_by(int32_t dx, int32_t dy);
+
+// ---- Scroll Wheel ----
+// delta: positive = away from user; negative = toward user. Each detent = 120 units.
+int hidt_mouse_simulator_wheel(int32_t delta);
+
+// ---- Buttons ----
+int hidt_mouse_simulator_press_button  (HidtMouseButton button);
+int hidt_mouse_simulator_release_button(HidtMouseButton button);
+
+// Click (press + optional delay + release).
+// interval: milliseconds between press and release.
+int hidt_mouse_simulator_click_button(HidtMouseButton button, uint64_t interval);
+
+// Double-click. interval = delay between clicks; press_interval = press/release delay.
+int hidt_mouse_simulator_double_click_button(
+    HidtMouseButton button, uint64_t interval, uint64_t press_interval);
+
+// ---- Drag ----
+// Drag from (from_x, from_y) to (to_x, to_y) holding button.
+// interval: ms between move steps; press_interval: ms for press/release.
+int hidt_mouse_simulator_drag_combo_from(
+    int32_t from_x, int32_t from_y,
+    int32_t to_x,   int32_t to_y,
+    HidtMouseButton button,
+    uint64_t interval, uint64_t press_interval);
+```
+
+---
+
+### Unified HID Hooker
+
+Listens to both keyboard and mouse events through a single callback. Internally dispatches to the per-device hookers.
+
+```c
+int  hidt_hid_hooker_run(void);
+void hidt_hid_hooker_stop(void);
+int  hidt_hid_hooker_is_running(void);
+
+int hidt_hid_hooker_set_event_handler(HidtHidEventHandler handler, void* user_data);
+int hidt_hid_hooker_set_user_data(void* user_data);
+```
+
+---
+
+## Usage Examples
+
+### Keyboard Monitor
+
+```c
+#include <hidtool_c/hidtool_c.h>
+#include <stdio.h>
+
+static int on_keyboard_event(const HidtKeyboardEvent* event, void* user_data)
+{
+    (void)user_data;
+    if (event->type == HIDT_KBD_ET_PRESS) {
+        HidtKeyboardKey key = hidt_keyboard_key_from_native_key(event->u.native_key);
+        printf("[PRESS]   native=0x%08X  key=0x%04X\n",
+               (unsigned)event->u.native_key, (unsigned)key);
+    } else if (event->type == HIDT_KBD_ET_RELEASE) {
+        HidtKeyboardKey key = hidt_keyboard_key_from_native_key(event->u.native_key);
+        printf("[RELEASE] native=0x%08X  key=0x%04X\n",
+               (unsigned)event->u.native_key, (unsigned)key);
+    }
+    return 1; // propagate
+}
+
+int main(void)
+{
+    hidt_keyboard_hooker_set_event_handler(on_keyboard_event, NULL);
+
+    if (!hidt_keyboard_hooker_run()) {
+        fprintf(stderr, "Failed to start keyboard hooker.\n");
+        return 1;
+    }
+
+    printf("Press ENTER to stop...\n");
+    getchar();
+
+    hidt_keyboard_hooker_stop();
+    return 0;
+}
+```
 
 ---
 
 ### Keyboard Simulator
 
 ```c
-int    hidtc_keyboard_simulator_initialize(void);
-void   hidtc_keyboard_simulator_destroy(void);
-int    hidtc_keyboard_simulator_is_initialized(void);
+#include <hidtool_c/hidtool_c.h>
+#include <stdio.h>
 
-/* Send individual events. */
-int    hidtc_keyboard_simulator_send_event(const HidtcKeyboardEvent* event);
-size_t hidtc_keyboard_simulator_send_events(const HidtcKeyboardEvent* events, size_t count);
+int main(void)
+{
+    if (!hidt_keyboard_simulator_initialize()) {
+        fprintf(stderr, "Failed to initialize keyboard simulator.\n");
+        return 1;
+    }
 
-/* Convenience functions. */
-int hidtc_keyboard_simulator_press_key_native(int32_t nativeKey);
-int hidtc_keyboard_simulator_press_key(HidtcKeyboardKey key);
+    printf("Focus a text editor, then press ENTER...\n");
+    getchar();
 
-int hidtc_keyboard_simulator_release_key_native(int32_t nativeKey);
-int hidtc_keyboard_simulator_release_key(HidtcKeyboardKey key);
+    // Type 'A' (uppercase)
+    hidt_keyboard_simulator_press_key(HIDT_KBDKEY_SHIFT_LEFT);
+    hidt_keyboard_simulator_click_key(HIDT_KBDKEY_A, 0);
+    hidt_keyboard_simulator_release_key(HIDT_KBDKEY_SHIFT_LEFT);
 
-/* Click = press + optional delay + release. */
-int hidtc_keyboard_simulator_click_key_native(int32_t nativeKey, size_t intervalMs);
-int hidtc_keyboard_simulator_click_key(HidtcKeyboardKey key,     size_t intervalMs);
+    // Send Ctrl+A
+    hidt_keyboard_simulator_press_key(HIDT_KBDKEY_CTRL_LEFT);
+    hidt_keyboard_simulator_click_key(HIDT_KBDKEY_A, 0);
+    hidt_keyboard_simulator_release_key(HIDT_KBDKEY_CTRL_LEFT);
+
+    hidt_keyboard_simulator_destroy();
+    return 0;
+}
 ```
 
 ---
 
-### Mouse Hooker
+### Mouse Monitor
 
 ```c
-int               hidtc_mouse_hooker_is_button_pressed(HidtcMouseButton button);
-HidtcAbsolutePos  hidtc_mouse_hooker_get_cursor_pos(void); /* Always {0,0} on Linux */
+#include <hidtool_c/hidtool_c.h>
+#include <stdio.h>
 
-int  hidtc_mouse_hooker_run(void);
-void hidtc_mouse_hooker_stop(void);
-int  hidtc_mouse_hooker_is_running(void);
+static int on_mouse_event(const HidtMouseEvent* event, void* user_data)
+{
+    (void)user_data;
+    switch (event->type) {
+        case HIDT_MS_ET_ABS_MOVE:
+            printf("[ABS_MOVE] x=%d y=%d\n",
+                   event->u.abs_pos.x, event->u.abs_pos.y);
+            break;
+        case HIDT_MS_ET_PRESS:
+            printf("[PRESS]    button=%d\n", (int)event->u.button);
+            break;
+        case HIDT_MS_ET_WHEEL:
+            printf("[WHEEL]    delta=%d\n", event->u.wheel_delta);
+            break;
+        default:
+            break;
+    }
+    return 1;
+}
 
-int hidtc_mouse_hooker_set_event_handler(HidtcMouseEventHandler handler, void* userData);
-int hidtc_mouse_hooker_set_user_data(void* userData);
+int main(void)
+{
+    hidt_mouse_hooker_set_event_handler(on_mouse_event, NULL);
+    if (!hidt_mouse_hooker_run()) {
+        fprintf(stderr, "Failed to start mouse hooker.\n");
+        return 1;
+    }
+
+    printf("Press ENTER to stop...\n");
+    getchar();
+
+    hidt_mouse_hooker_stop();
+    return 0;
+}
 ```
 
 ---
@@ -326,402 +583,37 @@ int hidtc_mouse_hooker_set_user_data(void* userData);
 ### Mouse Simulator
 
 ```c
-/* Get the valid coordinate range for absolute movement on the current display. */
-HidtcAbsolutePosRange hidtc_mouse_simulator_get_absolute_move_range(void);
-
-int    hidtc_mouse_simulator_initialize(void);
-void   hidtc_mouse_simulator_destroy(void);
-int    hidtc_mouse_simulator_is_initialized(void);
-
-int    hidtc_mouse_simulator_send_event(const HidtcMouseEvent* event);
-size_t hidtc_mouse_simulator_send_events(const HidtcMouseEvent* events, size_t count);
-
-/* Movement */
-int hidtc_mouse_simulator_move_to(int32_t x, int32_t y);
-int hidtc_mouse_simulator_move_by(int32_t dx, int32_t dy);
-
-/* Wheel — unit 120; positive = away from user */
-int hidtc_mouse_simulator_wheel(int32_t wheelDelta);
-
-/* Button actions at the current cursor position */
-int hidtc_mouse_simulator_press_button(HidtcMouseButton button);
-int hidtc_mouse_simulator_release_button(HidtcMouseButton button);
-int hidtc_mouse_simulator_click_button(HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_double_click_button(HidtcMouseButton button,
-                                               size_t interval1Ms, size_t interval2Ms);
-
-/* Button actions at a specified absolute position (move first, then act) */
-int hidtc_mouse_simulator_wheel_at(int32_t x, int32_t y, int32_t wheelDelta, size_t intervalMs);
-int hidtc_mouse_simulator_press_button_at(int32_t x, int32_t y,
-                                           HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_release_button_at(int32_t x, int32_t y,
-                                             HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_click_button_at(int32_t x, int32_t y, HidtcMouseButton button,
-                                           size_t interval1Ms, size_t interval2Ms);
-int hidtc_mouse_simulator_double_click_button_at(int32_t x, int32_t y, HidtcMouseButton button,
-                                                  size_t interval1Ms, size_t interval2Ms,
-                                                  size_t interval3Ms);
-
-/* Drag */
-int hidtc_mouse_simulator_drag_to(int32_t x, int32_t y, HidtcMouseButton button);
-int hidtc_mouse_simulator_drag_combo(int32_t endX, int32_t endY,
-                                      HidtcMouseButton button, size_t intervalMs);
-int hidtc_mouse_simulator_drag_combo_from(int32_t startX, int32_t startY,
-                                           int32_t endX,   int32_t endY,
-                                           HidtcMouseButton button,
-                                           size_t interval1Ms, size_t interval2Ms);
-```
-
----
-
-### HID Hooker (Unified)
-
-Combines both keyboard and mouse listeners into a single callback.
-
-```c
-int hidtc_hid_hooker_is_support_block_event_propagation(void);
-int hidtc_hid_hooker_is_key_pressed(int32_t nativeKey);       /* keyboard only */
-int hidtc_hid_hooker_is_button_pressed(HidtcMouseButton button); /* mouse only */
-HidtcAbsolutePos hidtc_hid_hooker_get_cursor_pos(void);       /* mouse only */
-
-int  hidtc_hid_hooker_run(void);
-void hidtc_hid_hooker_stop(void);
-int  hidtc_hid_hooker_is_running(void);
-
-int hidtc_hid_hooker_set_event_handler(HidtcHidEventHandler handler, void* userData);
-int hidtc_hid_hooker_set_user_data(void* userData);
-```
-
----
-
-### HID Simulator (Unified)
-
-Dispatches keyboard, mouse, and sleep events through a single interface.
-
-```c
-int    hidtc_hid_simulator_initialize(void);
-void   hidtc_hid_simulator_destroy(void);
-int    hidtc_hid_simulator_is_initialized(void);
-
-int    hidtc_hid_simulator_send_event(const HidtcHidEvent* event);
-size_t hidtc_hid_simulator_send_events(const HidtcHidEvent* events, size_t count);
-```
-
----
-
-## Usage Examples
-
-### Example 1 — Monitor All Keyboard Events
-
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-
-#ifdef _WIN32
-#  include <windows.h>
-#  define SLEEP_MS(ms) Sleep(ms)
-#else
-#  include <unistd.h>
-#  define SLEEP_MS(ms) usleep((ms) * 1000)
-#endif
-
-int on_key_event(const HidtcKeyboardEvent* event, void* userData)
-{
-    (void)userData;
-    if (event->type == HIDTC_KBD_ET_PRESS)
-    {
-        HidtcKeyboardKey key = hidtc_keyboard_key_from_native_key(event->nativeKey);
-        printf("[PRESS]   native=0x%X  key_enum=0x%X\n", event->nativeKey, (unsigned)key);
-    }
-    else if (event->type == HIDTC_KBD_ET_RELEASE)
-    {
-        printf("[RELEASE] native=0x%X\n", event->nativeKey);
-    }
-    return 1; /* propagate */
-}
-
-int main(void)
-{
-    hidtc_keyboard_hooker_set_event_handler(on_key_event, NULL);
-    hidtc_keyboard_hooker_run();
-    printf("Listening for keyboard events. Press any key (Ctrl+C to quit)...\n");
-
-    /* Keep the program running */
-    while (hidtc_keyboard_hooker_is_running())
-        SLEEP_MS(100);
-
-    return 0;
-}
-```
-
----
-
-### Example 2 — Simulate Keyboard Input (Type "Hello")
-
-```c
 #include <hidtool_c/hidtool_c.h>
 #include <stdio.h>
 
 int main(void)
 {
-    if (!hidtc_keyboard_simulator_initialize())
-    {
-        fprintf(stderr, "Failed to initialize keyboard simulator.\n");
+    if (!hidt_mouse_simulator_initialize()) {
+        fprintf(stderr, "Failed to initialize mouse simulator.\n");
         return 1;
     }
 
-    /* Type "Hello" — shift+H, e, l, l, o */
-    hidtc_keyboard_simulator_press_key(HIDTC_KBDKEY_SHIFT);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_H, 0);
-    hidtc_keyboard_simulator_release_key(HIDTC_KBDKEY_SHIFT);
+    // Move to (800, 600) and left-click
+    hidt_mouse_simulator_move_to(800, 600);
+    hidt_mouse_simulator_click_button(HIDT_MSBTN_LEFT, 50);
 
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_E, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_L, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_L, 0);
-    hidtc_keyboard_simulator_click_key(HIDTC_KBDKEY_O, 0);
+    // Scroll down 3 detents
+    hidt_mouse_simulator_wheel(-3 * 120);
 
-    hidtc_keyboard_simulator_destroy();
+    // Drag from (400, 400) to (600, 400)
+    hidt_mouse_simulator_drag_combo_from(400, 400, 600, 400, HIDT_MSBTN_LEFT, 0, 0);
+
+    hidt_mouse_simulator_destroy();
     return 0;
 }
 ```
 
 ---
 
-### Example 3 — Simulate Ctrl+C (Copy)
+## Notes and Caveats
 
-```c
-#include <hidtool_c/hidtool_c.h>
-
-int main(void)
-{
-    hidtc_keyboard_simulator_initialize();
-
-    /* Build and send events as a batch */
-    HidtcKeyboardEvent events[4];
-
-    events[0].type      = HIDTC_KBD_ET_PRESS;
-    events[0].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[0].timestamp = 0;
-
-    events[1].type      = HIDTC_KBD_ET_PRESS;
-    events[1].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_C);
-    events[1].timestamp = 0;
-
-    events[2].type      = HIDTC_KBD_ET_RELEASE;
-    events[2].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_C);
-    events[2].timestamp = 0;
-
-    events[3].type      = HIDTC_KBD_ET_RELEASE;
-    events[3].nativeKey = hidtc_keyboard_key_to_native_key(HIDTC_KBDKEY_CTRL);
-    events[3].timestamp = 0;
-
-    hidtc_keyboard_simulator_send_events(events, 4);
-    hidtc_keyboard_simulator_destroy();
-    return 0;
-}
-```
-
----
-
-### Example 4 — Monitor Mouse Events
-
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-
-int on_mouse_event(const HidtcMouseEvent* event, void* userData)
-{
-    (void)userData;
-    switch (event->type)
-    {
-    case HIDTC_MS_ET_ABS_MOVE:
-        printf("[MOVE]  x=%d  y=%d\n", event->absPos.x, event->absPos.y);
-        break;
-    case HIDTC_MS_ET_WHEEL:
-        printf("[WHEEL] delta=%d\n", event->wheelDelta);
-        break;
-    case HIDTC_MS_ET_PRESS:
-        printf("[PRESS]   button=%d\n", (int)event->button);
-        break;
-    case HIDTC_MS_ET_RELEASE:
-        printf("[RELEASE] button=%d\n", (int)event->button);
-        break;
-    default:
-        break;
-    }
-    return 1;
-}
-
-int main(void)
-{
-    hidtc_mouse_hooker_set_event_handler(on_mouse_event, NULL);
-    hidtc_mouse_hooker_run();
-    printf("Listening for mouse events...\n");
-
-    /* Wait until the listener stops */
-#ifdef _WIN32
-    #include <windows.h>
-    Sleep(10000);
-#else
-    #include <unistd.h>
-    sleep(10);
-#endif
-
-    hidtc_mouse_hooker_stop();
-    return 0;
-}
-```
-
----
-
-### Example 5 — Simulate Mouse: Move, Click, Scroll
-
-```c
-#include <hidtool_c/hidtool_c.h>
-
-#ifdef _WIN32
-#  include <windows.h>
-#  define SLEEP_MS(ms) Sleep(ms)
-#else
-#  include <unistd.h>
-#  define SLEEP_MS(ms) usleep((ms) * 1000)
-#endif
-
-int main(void)
-{
-    if (!hidtc_mouse_simulator_initialize())
-        return 1;
-
-    HidtcAbsolutePosRange range = hidtc_mouse_simulator_get_absolute_move_range();
-
-    /* Move to the center of the screen */
-    int32_t cx = (range.min_x + range.max_x) / 2;
-    int32_t cy = (range.min_y + range.max_y) / 2;
-    hidtc_mouse_simulator_move_to(cx, cy);
-    SLEEP_MS(200);
-
-    /* Left click */
-    hidtc_mouse_simulator_click_button(HIDTC_MSBTN_LEFT, 50);
-    SLEEP_MS(200);
-
-    /* Double click */
-    hidtc_mouse_simulator_double_click_button(HIDTC_MSBTN_LEFT, 50, 100);
-    SLEEP_MS(200);
-
-    /* Scroll up */
-    hidtc_mouse_simulator_wheel(120);
-    SLEEP_MS(100);
-
-    /* Relative move */
-    hidtc_mouse_simulator_move_by(50, 50);
-    SLEEP_MS(100);
-
-    /* Drag from (cx,cy) to (cx+200, cy+100) */
-    hidtc_mouse_simulator_drag_combo_from(cx, cy, cx + 200, cy + 100,
-                                           HIDTC_MSBTN_LEFT, 10, 0);
-
-    hidtc_mouse_simulator_destroy();
-    return 0;
-}
-```
-
----
-
-### Example 6 — Unified HID Listener with User Data
-
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-typedef struct {
-    int keyPressCount;
-    int mouseClickCount;
-} Stats;
-
-int on_hid_event(const HidtcHidEvent* event, void* userData)
-{
-    Stats* stats = (Stats*)userData;
-
-    if (event->type == HIDTC_HID_ET_KEYBOARD &&
-        event->keyboardEvent.type == HIDTC_KBD_ET_PRESS)
-    {
-        stats->keyPressCount++;
-        printf("Total key presses: %d\n", stats->keyPressCount);
-    }
-    else if (event->type == HIDTC_HID_ET_MOUSE &&
-             event->mouseEvent.type == HIDTC_MS_ET_PRESS)
-    {
-        stats->mouseClickCount++;
-        printf("Total mouse clicks: %d\n", stats->mouseClickCount);
-    }
-    return 1;
-}
-
-int main(void)
-{
-    Stats stats = {0, 0};
-
-    hidtc_hid_hooker_set_event_handler(on_hid_event, &stats);
-    hidtc_hid_hooker_run();
-    printf("Monitoring input. Press Ctrl+C to exit.\n");
-
-    /* Block until stopped */
-    while (hidtc_hid_hooker_is_running())
-    {
-#ifdef _WIN32
-        Sleep(100);
-#else
-        usleep(100000);
-#endif
-    }
-
-    printf("Final — keys: %d, clicks: %d\n",
-           stats.keyPressCount, stats.mouseClickCount);
-    return 0;
-}
-```
-
----
-
-### Example 7 — Block a Specific Key (Platform Support Required)
-
-```c
-#include <hidtool_c/hidtool_c.h>
-#include <stdio.h>
-
-int on_key_event(const HidtcKeyboardEvent* event, void* userData)
-{
-    /* Block the Escape key */
-    if (event->type == HIDTC_KBD_ET_PRESS)
-    {
-        HidtcKeyboardKey key = hidtc_keyboard_key_from_native_key(event->nativeKey);
-        if (key == HIDTC_KBDKEY_ESCAPE)
-        {
-            printf("Escape key blocked.\n");
-            return 0; /* block propagation */
-        }
-    }
-    return 1; /* propagate everything else */
-}
-
-int main(void)
-{
-    if (!hidtc_hid_hooker_is_support_block_event_propagation())
-    {
-        printf("This platform does not support blocking event propagation.\n");
-        return 1;
-    }
-
-    hidtc_keyboard_hooker_set_event_handler(on_key_event, NULL);
-    hidtc_keyboard_hooker_run();
-    printf("Running — Escape key is blocked. Press Ctrl+C to quit.\n");
-
-#ifdef _WIN32
-    Sleep(INFINITE);
-#else
-    pause();
-#endif
-    return 0;
-}
-```
+- **Blocking events**: Returning `0` from a callback blocks the event from reaching other applications. This feature is not supported on all platforms — check the upstream [hidtool documentation](https://github.com/JaderoChan/hidtool) for details.
+- **Stopping from a callback**: Never call `hidt_*_hooker_stop()` from inside the event callback. The callback runs on the hooker's internal thread; calling stop from there will deadlock (`EDEADLK`). Use an atomic flag and call stop from the main thread.
+- **macOS simulation**: Simulation functions always return success even if the action has no effect. Grant Accessibility permissions to the hosting process.
+- **Linux cursor position**: `hidt_mouse_hooker_get_cursor_pos()` always returns `{0, 0}` on Linux.
+- **Wheel units**: One scroll detent = 120 units. Positive delta scrolls away from the user; negative scrolls toward the user.
