@@ -1,0 +1,7 @@
+#ifndef HIDTOOL_C_CONFIG_H
+#define HIDTOOL_C_CONFIG_H
+
+#cmakedefine HIDTOOL_C_HAS_KEYBOARD
+#cmakedefine HIDTOOL_C_HAS_MOUSE
+
+#endif // !HIDTOOL_C_CONFIG_H
