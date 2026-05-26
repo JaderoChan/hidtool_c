@@ -59,9 +59,9 @@ int main(void)
     hidt_mouse_simulator_move_by(100, 50);
     SLEEP_MS(500);
 
-    // 5. Drag from (400, 400) to (600, 400) holding left button
-    printf("5. Drag (400,400) -> (600,400)...\n");
-    hidt_mouse_simulator_drag_combo_from(400, 400, 600, 400, HIDT_MSBTN_LEFT, 0, 0);
+    // 5. Drag from (400, 400) to (600, 600) holding left button
+    printf("5. Drag (400,400) -> (600,600)...\n");
+    hidt_mouse_simulator_drag_combo_from(400, 400, 600, 600, HIDT_MSBTN_LEFT, 0, 0);
     SLEEP_MS(500);
 
     // 6. Double-click
