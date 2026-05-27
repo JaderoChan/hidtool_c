@@ -1,4 +1,4 @@
-# hidtool_c — hidtool 的 C 语言绑定
+# hidtool_c — hidtool 的 C 语言绑定 *
 
 [**简体中文** | [**English**](README_EN.md)]
 
@@ -14,26 +14,42 @@
 
 ## 目录
 
-- [特性](#特性)
-- [平台支持](#平台支持)
-- [环境要求](#环境要求)
-- [构建](#构建)
-- [集成](#集成)
-- [API 概览](#api-概览)
-  - [类型与枚举](#类型与枚举)
-  - [通用 HID 工具函数](#通用-hid-工具函数)
-  - [键盘 — 按键工具函数](#键盘--按键工具函数)
-  - [键盘 — 钩子（监听）](#键盘--钩子监听)
-  - [键盘 — 模拟器](#键盘--模拟器)
-  - [鼠标 — 钩子（监听）](#鼠标--钩子监听)
-  - [鼠标 — 模拟器](#鼠标--模拟器)
-  - [统一 HID 钩子](#统一-hid-钩子)
-- [使用示例](#使用示例)
-  - [键盘监听](#键盘监听)
-  - [键盘模拟](#键盘模拟)
-  - [鼠标监听](#鼠标监听)
-  - [鼠标模拟](#鼠标模拟)
-- [注意事项](#注意事项)
+- [hidtool\_c — hidtool 的 C 语言绑定 \*](#hidtool_c--hidtool-的-c-语言绑定-)
+  - [目录](#目录)
+  - [特性](#特性)
+  - [平台支持](#平台支持)
+  - [环境要求](#环境要求)
+  - [构建](#构建)
+    - [CMake 选项](#cmake-选项)
+  - [集成](#集成)
+    - [CMake — add\_subdirectory](#cmake--add_subdirectory)
+    - [CMake — find\_package（安装后使用）](#cmake--find_package安装后使用)
+    - [手动链接](#手动链接)
+  - [API 概览](#api-概览)
+    - [类型与枚举](#类型与枚举)
+      - [`HidtHidType`](#hidthidtype)
+      - [`HidtMouseButton`](#hidtmousebutton)
+      - [坐标类型](#坐标类型)
+      - [`HidtKeyboardKey`](#hidtkeyboardkey)
+      - [`HidtKeyboardEventType`](#hidtkeyboardeventtype)
+      - [`HidtKeyboardEvent`](#hidtkeyboardevent)
+      - [`HidtMouseEventType`](#hidtmouseeventtype)
+      - [`HidtMouseEvent`](#hidtmouseevent)
+      - [`HidtHidEvent`](#hidthidevent)
+      - [回调类型](#回调类型)
+    - [通用 HID 工具函数](#通用-hid-工具函数)
+    - [键盘 — 按键工具函数](#键盘--按键工具函数)
+    - [键盘 — 钩子（监听）](#键盘--钩子监听)
+    - [键盘 — 模拟器](#键盘--模拟器)
+    - [鼠标 — 钩子（监听）](#鼠标--钩子监听)
+    - [鼠标 — 模拟器](#鼠标--模拟器)
+    - [统一 HID 钩子](#统一-hid-钩子)
+  - [使用示例](#使用示例)
+    - [键盘监听](#键盘监听)
+    - [键盘模拟](#键盘模拟)
+    - [鼠标监听](#鼠标监听)
+    - [鼠标模拟](#鼠标模拟)
+  - [注意事项](#注意事项)
 
 ---
 

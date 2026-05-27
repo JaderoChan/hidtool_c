@@ -1,4 +1,4 @@
-# hidtool_c
+# hidtool_c *
 
 [[**简体中文**](doc/README_ZH.md) | [**English**](doc/README_EN.md)]
 

@@ -1,4 +1,4 @@
-# hidtool_c — C Bindings for hidtool
+# hidtool_c — C Bindings for hidtool *
 
 [[**简体中文**](README_ZH.md) | **English**]
 
@@ -14,26 +14,42 @@ Pure C bindings for the [hidtool](https://github.com/JaderoChan/hidtool) C++ lib
 
 ## Table of Contents
 
-- [Features](#features)
-- [Platform Support](#platform-support)
-- [Requirements](#requirements)
-- [Build](#build)
-- [Integration](#integration)
-- [API Overview](#api-overview)
-  - [Types and Enumerations](#types-and-enumerations)
-  - [General HID Utilities](#general-hid-utilities)
-  - [Keyboard — Key Utilities](#keyboard--key-utilities)
-  - [Keyboard — Hooker](#keyboard--hooker)
-  - [Keyboard — Simulator](#keyboard--simulator)
-  - [Mouse — Hooker](#mouse--hooker)
-  - [Mouse — Simulator](#mouse--simulator)
-  - [Unified HID Hooker](#unified-hid-hooker)
-- [Usage Examples](#usage-examples)
-  - [Keyboard Monitor](#keyboard-monitor)
-  - [Keyboard Simulator](#keyboard-simulator)
-  - [Mouse Monitor](#mouse-monitor)
-  - [Mouse Simulator](#mouse-simulator)
-- [Notes and Caveats](#notes-and-caveats)
+- [hidtool\_c — C Bindings for hidtool \*](#hidtool_c--c-bindings-for-hidtool-)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Platform Support](#platform-support)
+  - [Requirements](#requirements)
+  - [Build](#build)
+    - [CMake Options](#cmake-options)
+  - [Integration](#integration)
+    - [CMake — add\_subdirectory](#cmake--add_subdirectory)
+    - [CMake — find\_package (after install)](#cmake--find_package-after-install)
+    - [Manual Linking](#manual-linking)
+  - [API Overview](#api-overview)
+    - [Types and Enumerations](#types-and-enumerations)
+      - [`HidtHidType`](#hidthidtype)
+      - [`HidtMouseButton`](#hidtmousebutton)
+      - [Position Types](#position-types)
+      - [`HidtKeyboardKey`](#hidtkeyboardkey)
+      - [`HidtKeyboardEventType`](#hidtkeyboardeventtype)
+      - [`HidtKeyboardEvent`](#hidtkeyboardevent)
+      - [`HidtMouseEventType`](#hidtmouseeventtype)
+      - [`HidtMouseEvent`](#hidtmouseevent)
+      - [`HidtHidEvent`](#hidthidevent)
+      - [Callback Types](#callback-types)
+    - [General HID Utilities](#general-hid-utilities)
+    - [Keyboard — Key Utilities](#keyboard--key-utilities)
+    - [Keyboard — Hooker](#keyboard--hooker)
+    - [Keyboard — Simulator](#keyboard--simulator)
+    - [Mouse — Hooker](#mouse--hooker)
+    - [Mouse — Simulator](#mouse--simulator)
+    - [Unified HID Hooker](#unified-hid-hooker)
+  - [Usage Examples](#usage-examples)
+    - [Keyboard Monitor](#keyboard-monitor)
+    - [Keyboard Simulator](#keyboard-simulator)
+    - [Mouse Monitor](#mouse-monitor)
+    - [Mouse Simulator](#mouse-simulator)
+  - [Notes and Caveats](#notes-and-caveats)
 
 ---
 
