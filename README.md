@@ -3,7 +3,7 @@
 [[**简体中文**](doc/README_ZH.md) | [**English**](doc/README_EN.md)]
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/JaderoChan/hidtool_c/releases)
+[![Version](https://img.shields.io/badge/version-2.4.1-blue.svg)](https://github.com/JaderoChan/hidtool_c/releases)
 [![Language: C](https://img.shields.io/badge/language-C99-lightgrey.svg)](https://en.wikipedia.org/wiki/C99)
 [![C++](https://img.shields.io/badge/build%20requires-C%2B%2B11-blue.svg)](https://en.cppreference.com/w/cpp/11)
 [![CMake](https://img.shields.io/badge/CMake-%3E%3D3.26-064F8C.svg)](https://cmake.org/)

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-project(hidtool_c VERSION 1.0.0 LANGUAGES C CXX)
+project(hidtool_c VERSION 2.4.1 LANGUAGES C CXX)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
